@@ -20,8 +20,18 @@ public class CatzIntake{
 
     private final int INTAKE_ROLLER_CAN_ID = 2637;
 
-    public void stowed() {
+    private final SupplyCurrentLimitConfiguration currentLimit;
 
+    private final double  CURRENT_LIMIT_AMPS            = 60.0;
+    private final double  CURRENT_LIMIT_TRIGGER_AMPS    = 60.0;
+    private final double  CURRENT_LIMIT_TIMEOUT_SECONDS = 0.5;
+    private final boolean ENABLE_CURRENT_LIMIT          = true;
+
+    public CatzIntake() {
+
+        intake_roller =new WPI_TalonFX(INTAKE_ROLLER_CAN_ID);
+
+        currentLimit = new SupplyCurrentLimitConfiguration(ENABLE_CURRENT_LIMIT, CURRENT_LIMIT_AMPS, CURRENT_LIMIT_TRIGGER_AMPS, CURRENT_LIMIT_TIMEOUT_SECONDS);
 
     }
 
