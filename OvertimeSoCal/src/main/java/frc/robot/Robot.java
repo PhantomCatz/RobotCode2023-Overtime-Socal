@@ -9,6 +9,7 @@ import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.Mechanisms.CatzShooter;
+import frc.Mechanisms.CatzIntake;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -24,6 +25,7 @@ public class Robot extends TimedRobot {
    */
 
    private final CatzShooter shooter = new CatzShooter();
+   private final CatzIntake intake = new CatzIntake();
 
 
    private final int XBOX_AUX_PORT = 1;
