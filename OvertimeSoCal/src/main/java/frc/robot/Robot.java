@@ -31,6 +31,8 @@ public class Robot extends TimedRobot {
    private final int XBOX_AUX_PORT = 1;
    private XboxController xboxAux;
 
+   public static int shootMode = 0; //0 is low, 1 is mid, 2 is high
+
    @Override
    public void robotInit()
    {
@@ -52,6 +54,11 @@ public class Robot extends TimedRobot {
    @Override
    public void teleopPeriodic()
    {
-      shooter.cmdProcShooter(xboxAux.getRightTriggerAxis() > 0.1, xboxAux.getAButton());
+      if(xboxAux.getXButtonPressed())
+      {
+         shootMode = (shootMode + 1) % 3;
+      }
+
+      shooter.cmdProcShooter(xboxAux.getAButton());
    }
 }
