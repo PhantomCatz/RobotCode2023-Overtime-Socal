@@ -54,11 +54,17 @@ public class Robot extends TimedRobot {
    @Override
    public void teleopPeriodic()
    {
+<<<<<<< Updated upstream
       if(xboxAux.getXButtonPressed())
       {
          shootMode = (shootMode + 1) % 3;
       }
 
       shooter.cmdProcShooter(xboxAux.getAButton());
+=======
+      shooter.cmdProcShooter(xboxAux.getRightTriggerAxis() > 0.1, xboxAux.getAButton());
+
+      intake.cmdProcIntake(xboxAux.getRightStickButton(), xboxAux.getLeftTriggerAxis(), xboxAux.getRightTriggerAxis());
+>>>>>>> Stashed changes
    }
 }
