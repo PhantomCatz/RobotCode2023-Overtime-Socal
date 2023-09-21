@@ -5,6 +5,9 @@ import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 
+import edu.wpi.first.wpilibj.Timer;
+import frc.robot.Robot;
+
 public class CatzShooter {
     /*
      * 
@@ -33,8 +36,10 @@ public class CatzShooter {
     private final double  CURRENT_LIMIT_TIMEOUT_SECONDS = 0.5;
     private final boolean ENABLE_CURRENT_LIMIT          = true;
 
-    private final double FRONT_ROLLER_POWER = 1.0;
-    private final double BACK_ROLLER_POWER = 1.0;
+    private final double SHOOT_POWER_HIGH = 1.0;
+    private final double SHOOT_POWER_MID = 0.5;
+
+    private int shootMode = 0; //0 is mid, 1 is high
 
     public CatzShooter()
     {
@@ -61,20 +66,28 @@ public class CatzShooter {
         backRoller.config_kD(0, kD);
     }
 
-    public void cmdProcShooter(boolean rightTrigger, boolean a)
+    public void cmdProcShooter(boolean shoot)
     {
-        if(rightTrigger)
+        if(shoot)
         {
-            backRoller.set(ControlMode.PercentOutput, BACK_ROLLER_POWER);
+            if(Robot.shootMode == 1)
+            {
+                shoot(SHOOT_POWER_MID);
+            }
+            else if(Robot.shootMode == 2)
+            {
+                shoot(SHOOT_POWER_HIGH);
+            }
         }
         else
         {
-            backRoller.set(ControlMode.PercentOutput, 0.0);
+            shoot(0.0);
         }
+    }
 
-        if(a)
-        {
-            frontRoller.set(ControlMode.PercentOutput, FRONT_ROLLER_POWER);
-        }
+    public void shoot(double power)
+    {
+        frontRoller.set(ControlMode.PercentOutput, power);
+        backRoller.set(ControlMode.PercentOutput, power);
     }
 }
