@@ -82,6 +82,14 @@ public class CatzIndexer {
         indexerMotorLt.set(ControlMode.PercentOutput, power);
     }
 
+<<<<<<< Updated upstream
+=======
+    public void cmdProcIndexer(boolean rollIndexer)
+    {
+        stopWhenDetected(INDEXER_MOTOR_POWER_ON);
+    }
+
+>>>>>>> Stashed changes
     public void stopWhenDetected(double power)
     {
         if(getBeamBreak())
