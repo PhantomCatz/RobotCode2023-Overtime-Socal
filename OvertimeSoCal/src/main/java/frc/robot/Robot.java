@@ -60,7 +60,5 @@ public class Robot extends TimedRobot {
       }
 
       shooter.cmdProcShooter(xboxAux.getAButton());
-
-      intake.cmdProcIntake(xboxAux.getRightStickButton(), xboxAux.getLeftTriggerAxis(), xboxAux.getRightTriggerAxis());
    }
 }
