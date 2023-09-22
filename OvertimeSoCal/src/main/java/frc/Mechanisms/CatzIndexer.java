@@ -81,4 +81,16 @@ public class CatzIndexer {
     {
         indexerMotorLt.set(ControlMode.PercentOutput, power);
     }
+
+    public void stopWhenDetected(double power)
+    {
+        if(getBeamBreak())
+        {
+            indexerControl(power);
+        }
+        else
+        {
+            indexerControl(0.0);
+        }
+    }
 }
