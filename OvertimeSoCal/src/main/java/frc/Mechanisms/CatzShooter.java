@@ -36,10 +36,9 @@ public class CatzShooter {
     private final double  CURRENT_LIMIT_TIMEOUT_SECONDS = 0.5;
     private final boolean ENABLE_CURRENT_LIMIT          = true;
 
+    private final double SHOOT_POWER_CUBE_TRANSFER = 2.0; //haha 200% power
     private final double SHOOT_POWER_HIGH = 1.0;
     private final double SHOOT_POWER_MID = 0.5;
-
-    private int shootMode = 0; //0 is mid, 1 is high
 
     public CatzShooter()
     {
@@ -70,13 +69,17 @@ public class CatzShooter {
     {
         if(shoot)
         {
-            if(Robot.shootMode == 1)
+            if(Robot.shootMode == 0)
             {
                 shoot(SHOOT_POWER_MID);
             }
-            else if(Robot.shootMode == 2)
+            else if(Robot.shootMode == 1)
             {
                 shoot(SHOOT_POWER_HIGH);
+            }
+            else if(Robot.shootMode == 2)
+            {
+                shoot(SHOOT_POWER_CUBE_TRANSFER);
             }
         }
         else

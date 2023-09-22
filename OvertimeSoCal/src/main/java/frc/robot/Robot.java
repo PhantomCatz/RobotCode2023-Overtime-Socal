@@ -31,7 +31,7 @@ public class Robot extends TimedRobot {
    private final int XBOX_AUX_PORT = 1;
    private XboxController xboxAux;
 
-   public static int shootMode = 0; //0 is low, 1 is mid, 2 is high
+   public static int shootMode = 0; //0 is mid, 1 is high, 2 is cube transfer
 
    @Override
    public void robotInit()
