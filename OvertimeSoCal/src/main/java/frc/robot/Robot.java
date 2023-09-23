@@ -9,6 +9,7 @@ import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.Mechanisms.CatzShooter;
+import frc.Mechanisms.CatzIndexer;
 import frc.Mechanisms.CatzIntake;
 
 /**
@@ -26,7 +27,7 @@ public class Robot extends TimedRobot {
 
    private final CatzShooter shooter = new CatzShooter();
    private final CatzIntake intake = new CatzIntake();
-
+   private final CatzIndexer indexer = new CatzIndexer();
 
    private final int XBOX_AUX_PORT = 1;
    private XboxController xboxAux;
@@ -62,5 +63,7 @@ public class Robot extends TimedRobot {
       shooter.cmdProcShooter(xboxAux.getAButton());
       
       intake.cmdProcIntake(xboxAux.getRightStickButton(), xboxAux.getLeftTriggerAxis(), xboxAux.getRightTriggerAxis());
+      indexer.cmdProcIndexer(xboxAux.getYButtonPressed());
+
    }
 }
