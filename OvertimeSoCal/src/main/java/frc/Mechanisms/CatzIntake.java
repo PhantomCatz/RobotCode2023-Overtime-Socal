@@ -9,19 +9,23 @@ import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 
+import frc.Mechanisms.CatzIndexer;
+
+@SuppressWarnings("unused")
 public class CatzIntake{
     /*
      * 
      * [IMPORTANT]                                      [IMPORTANT]
      * [IMPORTANT]    ALL CONSTANTS ARE DUMMY VALUES    [IMPORTANT]
      * [IMPORTANT]                                      [IMPORTANT]
-     * 
-     * 
+     *  
      */
 
-    private  WPI_TalonFX intakeRoller;
+    private WPI_TalonFX intakeRoller;
 
-    private final int INTAKE_ROLLER_CAN_ID = 2637;
+    CatzIndexer index = new CatzIndexer();
+
+    private final int INTAKE_ROLLER_CAN_ID = 2637; //TBD
 
     private final SupplyCurrentLimitConfiguration currentLimit;
 
@@ -70,14 +74,14 @@ public class CatzIntake{
         }
     }
 
-    public void cmdProcIntake(boolean toggleIntake, double intakeRollerInward, double intakeRollerOutward)
+    public void cmdProcIntake(boolean intakeDeploy, boolean intakeStow, double intakeRollerInward, double intakeRollerOutward)
     {
-        if (toggleIntake && isStowed())
+        if (intakeDeploy && isStowed()) 
         {
             intakeSolenoid.set(Value.kForward);
             intakeState = INTAKE_GROUND;
-        }
-        else if (toggleIntake)
+        } 
+        else if (intakeStow) 
         {
             intakeSolenoid.set(Value.kReverse);
             intakeState = INTAKE_STOWED;
@@ -86,10 +90,35 @@ public class CatzIntake{
         if (intakeRollerInward > 0.1)
         {
             intakeRoller.set(ControlMode.PercentOutput, INTAKE_ROLLER_POWER);
-        }
+            index.index();
+        } 
         else if (intakeRollerOutward > 0.1)
         {
             intakeRoller.set(ControlMode.PercentOutput, -INTAKE_ROLLER_POWER);
-        }
+            index.outdex();
+        } 
+        
     }
+    // public void cmdProcIntake(boolean toggleIntake, double intakeRollerInward, double intakeRollerOutward)
+    // {
+    //     if (toggleIntake && isStowed())
+    //     {
+    //         intakeSolenoid.set(Value.kForward);
+    //         intakeState = INTAKE_GROUND;
+    //     }
+    //     else if (toggleIntake)
+    //     {
+    //         intakeSolenoid.set(Value.kReverse);
+    //         intakeState = INTAKE_STOWED;
+    //     }
+
+    //     if (intakeRollerInward > 0.1)
+    //     {
+    //         intakeRoller.set(ControlMode.PercentOutput, INTAKE_ROLLER_POWER);
+    //     }
+    //     else if (intakeRollerOutward > 0.1)
+    //     {
+    //         intakeRoller.set(ControlMode.PercentOutput, -INTAKE_ROLLER_POWER);
+    //     }
+    // }
 }
