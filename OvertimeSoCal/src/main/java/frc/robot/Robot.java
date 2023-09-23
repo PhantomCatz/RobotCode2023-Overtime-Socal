@@ -6,8 +6,6 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
-import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.Mechanisms.CatzShooter;
 import frc.Mechanisms.CatzIndexer;
 import frc.Mechanisms.CatzIntake;
@@ -25,14 +23,13 @@ public class Robot extends TimedRobot {
    *    - A: shoot 
    */
 
-   private final CatzShooter shooter = new CatzShooter();
-   private final CatzIntake intake = new CatzIntake();
-   private final CatzIndexer indexer = new CatzIndexer();
+   public static final CatzIntake intake = new CatzIntake();
+   public static final CatzIndexer indexer = new CatzIndexer();
+   public static final CatzShooter shooter = new CatzShooter();
 
    private final int XBOX_AUX_PORT = 1;
-   private XboxController xboxAux;
+   public static XboxController xboxAux;
 
-   public static int shootMode = 0; //0 is mid, 1 is high, 2 is cube transfer
 
    @Override
    public void robotInit()
@@ -47,6 +44,12 @@ public class Robot extends TimedRobot {
    }
 
    @Override
+   public void autonomousPeriodic()
+   {
+      shooter.shooterPeriodicUpdate();
+   }
+
+   @Override
    public void teleopInit()
    {
 
@@ -55,15 +58,10 @@ public class Robot extends TimedRobot {
    @Override
    public void teleopPeriodic()
    {
-      if(xboxAux.getXButtonPressed())
-      {
-         shootMode = (shootMode + 1) % 3;
-      }
+      shooter.cmdProcShooter(xboxAux.getYButtonPressed(), xboxAux.getBButtonPressed(), xboxAux.getXButtonPressed(), xboxAux.getAButtonPressed());
+      shooter.shooterPeriodicUpdate();
 
-      shooter.cmdProcShooter(xboxAux.getAButton());
-      
       intake.cmdProcIntake(xboxAux.getRightStickButton(), xboxAux.getLeftTriggerAxis(), xboxAux.getRightTriggerAxis());
-      indexer.cmdProcIndexer(xboxAux.getYButtonPressed());
 
    }
 }
