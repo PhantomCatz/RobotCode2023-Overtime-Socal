@@ -6,6 +6,7 @@ import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
+import frc.robot.Robot;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 
@@ -47,7 +48,7 @@ public class CatzIntake{
 
     private int intakeState = INTAKE_STOWED;
 
-    public CatzIntake() {
+    public CatzIntake() {        
 
         intakeRoller =new WPI_TalonFX(INTAKE_ROLLER_CAN_ID);
 
@@ -74,30 +75,29 @@ public class CatzIntake{
         }
     }
 
-    public void cmdProcIntake(boolean intakeDeploy, boolean intakeStow, double intakeRollerInward, double intakeRollerOutward)
+    public void cmdProcIntake(boolean toggleDeployStow, double intake, double outtake)
     {
-        if (intakeDeploy && isStowed()) 
+        if (toggleDeployStow && isStowed())
         {
             intakeSolenoid.set(Value.kForward);
             intakeState = INTAKE_GROUND;
-        } 
-        else if (intakeStow) 
+        }
+        else if (toggleDeployStow)
         {
             intakeSolenoid.set(Value.kReverse);
             intakeState = INTAKE_STOWED;
         }
 
-        if (intakeRollerInward > 0.1)
-        {
-            intakeRoller.set(ControlMode.PercentOutput, INTAKE_ROLLER_POWER);
-            index.index();
-        } 
-        else if (intakeRollerOutward > 0.1)
+        if (intake > 0.1)
         {
             intakeRoller.set(ControlMode.PercentOutput, -INTAKE_ROLLER_POWER);
-            index.outdex();
-        } 
-        
+            Robot.indexer.indexerIntake();
+        }
+        else if (outtake > 0.1)
+        {
+            intakeRoller.set(ControlMode.PercentOutput, INTAKE_ROLLER_POWER);
+            Robot.indexer.indexerOuttake();
+        }
     }
     // public void cmdProcIntake(boolean toggleIntake, double intakeRollerInward, double intakeRollerOutward)
     // {

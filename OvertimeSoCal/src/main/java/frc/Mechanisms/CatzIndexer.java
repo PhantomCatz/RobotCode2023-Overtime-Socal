@@ -1,25 +1,19 @@
 package frc.Mechanisms;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
-import com.ctre.phoenix.motorcontrol.DemandType;
-import com.ctre.phoenix.motorcontrol.LimitSwitchNormal;
-import com.ctre.phoenix.motorcontrol.LimitSwitchSource;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
-import com.ctre.phoenix.motorcontrol.TalonFXControlMode;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 
 import edu.wpi.first.wpilibj.DigitalInput;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj.Timer;
 
 public class CatzIndexer {
 
-    private WPI_TalonFX indexerMotorLt;
-    private WPI_TalonFX indexerMotorRt;
+    private WPI_TalonFX ltIndexerMotor;
+    private WPI_TalonFX rtIndexerMotor;
 
-    private final int INDEXER_MOTOR_CAN_ID_LT = 2637;
-    private final int INDEXER_MOTOR_CAN_ID_RT = 2637;
+    private final int INDEXER_MOTOR_CAN_ID_LT = 4; //name should be left-canID
+    private final int INDEXER_MOTOR_CAN_ID_RT = 4; //see component map
 
     private final SupplyCurrentLimitConfiguration currentLimit;
 
@@ -28,9 +22,10 @@ public class CatzIndexer {
     private final double  CURRENT_LIMIT_TIMEOUT_SECONDS = 0.5;
     private final boolean ENABLE_CURRENT_LIMIT          = true;
 
-    private final double INDEXER_MOTOR_POWER_ON    =  0.5; 
+    private final double INDEXER_MOTOR_POWER_SHOOT = 1.0;
+    private final double INDEXER_MOTOR_POWER_INT    =  0.5; 
     private final double INDEXER_MOTOR_POWER_OFF   =  0.0;
-    private final double INDEXER_MOTOR_POWER_REV   = -0.5;
+    private final double INDEXER_MOTOR_POWER_OUT   = -0.5;
 
     private DigitalInput indexerBeamBreak;
 
@@ -38,67 +33,54 @@ public class CatzIndexer {
 
     public CatzIndexer() 
     {
-        indexerMotorLt = new WPI_TalonFX(INDEXER_MOTOR_CAN_ID_LT);
-        indexerMotorRt = new WPI_TalonFX(INDEXER_MOTOR_CAN_ID_RT);
+        ltIndexerMotor = new WPI_TalonFX(INDEXER_MOTOR_CAN_ID_LT);
+        rtIndexerMotor = new WPI_TalonFX(INDEXER_MOTOR_CAN_ID_RT);
 
         currentLimit = new SupplyCurrentLimitConfiguration(ENABLE_CURRENT_LIMIT, CURRENT_LIMIT_AMPS, CURRENT_LIMIT_TRIGGER_AMPS, CURRENT_LIMIT_TIMEOUT_SECONDS);
 
-        indexerMotorLt.configFactoryDefault();
-        indexerMotorLt.setNeutralMode(NeutralMode.Coast);
-        indexerMotorLt.configSupplyCurrentLimit(currentLimit);
+        ltIndexerMotor.configFactoryDefault();
+        ltIndexerMotor.setNeutralMode(NeutralMode.Brake); //change to brake
+        ltIndexerMotor.configSupplyCurrentLimit(currentLimit);
 
-        indexerMotorRt.configFactoryDefault();
-        indexerMotorRt.setNeutralMode(NeutralMode.Coast);
-        indexerMotorRt.configSupplyCurrentLimit(currentLimit);
+        rtIndexerMotor.configFactoryDefault();
+        rtIndexerMotor.setNeutralMode(NeutralMode.Brake); //change to brake
+        rtIndexerMotor.configSupplyCurrentLimit(currentLimit);
         
-        indexerMotorRt.setInverted(true);
-        indexerMotorRt.follow(indexerMotorLt);
+        rtIndexerMotor.setInverted(true);
+        rtIndexerMotor.follow(ltIndexerMotor);
 
         indexerBeamBreak = new DigitalInput(INDEXER_BEAM_BREAK_DIO_PORT);
     }
 
+    //False means the beam broke and true means the beams are connected??
     public boolean getBeamBreak()
     {
         return indexerBeamBreak.get();
     }
 
-    public void indexerOn()
-    {
-        indexerMotorLt.set(INDEXER_MOTOR_POWER_ON);
-    }
-     
     public void indexerOff()
     {
-        indexerMotorLt.set(INDEXER_MOTOR_POWER_OFF);
+        runIndexer(INDEXER_MOTOR_POWER_OFF);
     }
 
-    public void indexerReverse()
+    public void feedCubeToShooter()
     {
-        indexerMotorLt.set(INDEXER_MOTOR_POWER_REV);
+        runIndexer(INDEXER_MOTOR_POWER_SHOOT);
     }
 
-    public void indexerControl(double power) 
+    public void indexerIntake()
     {
-        indexerMotorLt.set(ControlMode.PercentOutput, power);
+        runIndexer(INDEXER_MOTOR_POWER_INT);
     }
 
-<<<<<<< Updated upstream
-=======
-    public void cmdProcIndexer(boolean rollIndexer)
+    public void indexerOuttake()
     {
-        stopWhenDetected(INDEXER_MOTOR_POWER_ON);
+        runIndexer(INDEXER_MOTOR_POWER_OUT);
     }
 
->>>>>>> Stashed changes
-    public void stopWhenDetected(double power)
+    private void runIndexer(double power)
     {
-        if(getBeamBreak())
-        {
-            indexerControl(power);
-        }
-        else
-        {
-            indexerControl(0.0);
-        }
+        rtIndexerMotor.set(ControlMode.PercentOutput, power);
+        ltIndexerMotor.set(ControlMode.PercentOutput, power);
     }
 }
