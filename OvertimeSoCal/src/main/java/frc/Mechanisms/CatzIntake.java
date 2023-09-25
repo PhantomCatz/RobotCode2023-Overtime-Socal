@@ -91,12 +91,12 @@ public class CatzIntake{
         if (intake > 0.1)
         {
             intakeRoller.set(ControlMode.PercentOutput, -INTAKE_ROLLER_POWER);
-            Robot.indexer.indexerIntake();
+            //Robot.indexer.indexerIntake(); TBD uncomment
         }
         else if (outtake > 0.1)
         {
             intakeRoller.set(ControlMode.PercentOutput, INTAKE_ROLLER_POWER);
-            Robot.indexer.indexerOuttake();
+            //Robot.indexer.indexerOuttake(); TBD uncomment
         }
     }
     // public void cmdProcIntake(boolean toggleIntake, double intakeRollerInward, double intakeRollerOutward)

@@ -9,6 +9,7 @@ import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.Utils.Conversions;
 import frc.Utils.Util;
 import frc.robot.Robot;
@@ -26,37 +27,37 @@ public class CatzShooter {
     private final WPI_TalonFX topRoller; //change name to top and bottom //make variable names the same length
     private final WPI_TalonFX btmRoller; 
 
-    private final double topRollerGearRatio = 1.0 / 1.0;
-    private final double botRollerGearRatio = 1.0 / 1.0;
+    private final double topRollerGearRatio = 2.0 / 1.0;
+    private final double botRollerGearRatio = 2.0 / 1.0;
 
     private final double kF_TOP = 0.6; 
-    private final double kP_TOP = 1.0; 
+    private final double kP_TOP = 0.01; 
     private final double kI_TOP = 0.0;
     private final double kD_TOP = 0.0;
 
     private final double kF_BOT = 0.6; 
-    private final double kP_BOT = 1.0; 
+    private final double kP_BOT = 0.01; 
     private final double kI_BOT = 0.0;
     private final double kD_BOT = 0.0;
 
 
-    private final int TOP_ROLLER_CAN_ID = 999; //see component map
-    private final int BOT_ROLLER_CAN_ID  = 999;
+    private final int TOP_ROLLER_CAN_ID = 11; //see component map
+    private final int BTM_ROLLER_CAN_ID  = 10;
 
     private final SupplyCurrentLimitConfiguration currentLimit;
 
     private final double  CURRENT_LIMIT_AMPS            = 60.0;
-    private final double  CURRENT_LIMIT_TRIGGER_AMPS    = 60.0;
+    private final double  CURRENT_LIMIT_TRIGGER_AMPS    = 60.0; //TBD Should be 55 current limited?
     private final double  CURRENT_LIMIT_TIMEOUT_SECONDS = 0.5;
     private final boolean ENABLE_CURRENT_LIMIT          = true;
 
-    private final double SHOOT_VEL_CUBE_TRANSFER_TOP = 4000; //RPM
-    private final double SHOOT_VEL_HIGH_TOP = 2000;
-    private final double SHOOT_VEL_MID_TOP = 1000;
+    private final double SHOOT_VEL_CUBE_TRANSFER_TOP = 10; //RPM
+    private final double SHOOT_VEL_HIGH_TOP = 50;
+    private final double SHOOT_VEL_MID_TOP = 45;
 
-    private final double SHOOT_VEL_CUBE_TRANSFER_BOT = 4000; //RPM
-    private final double SHOOT_VEL_HIGH_BOT = 2000;
-    private final double SHOOT_VEL_MID_BOT = 1000;
+    private final double SHOOT_VEL_CUBE_TRANSFER_BOT = 10; //RPM
+    private final double SHOOT_VEL_HIGH_BOT = 50;
+    private final double SHOOT_VEL_MID_BOT = 45;
 
     private enum ShooterState
     {
@@ -71,8 +72,8 @@ public class CatzShooter {
     private double topRollerRPM = 0.0;
     private double botRollerRPM = 0.0;
 
-    private double topRollerTargetRPM = 0.0;
-    private double botRollerTargetRPM = 0.0;
+    private volatile double topRollerTargetRPM = 0.0;
+    private volatile double botRollerTargetRPM = 0.0;
 
     private int shooterRPMStableCounter = 0;
     private final int SHOOTER_RPM_STEADY_THRESHOLD = 10; //0.1 second
@@ -90,7 +91,7 @@ public class CatzShooter {
     public CatzShooter()
     {
         topRoller = new WPI_TalonFX(TOP_ROLLER_CAN_ID);
-        btmRoller = new WPI_TalonFX(BOT_ROLLER_CAN_ID);
+        btmRoller = new WPI_TalonFX(BTM_ROLLER_CAN_ID);
 
         currentLimit = new SupplyCurrentLimitConfiguration(ENABLE_CURRENT_LIMIT, CURRENT_LIMIT_AMPS, CURRENT_LIMIT_TRIGGER_AMPS, CURRENT_LIMIT_TIMEOUT_SECONDS);
 
@@ -125,7 +126,6 @@ public class CatzShooter {
                         if(topRollerTargetRPM > 0.0)
                         {
                             shooterState = ShooterState.WAIT_FOR_STEADY;
-
                             setTargetVelocity();
                             rumbleSet = false;
                         }
@@ -138,6 +138,7 @@ public class CatzShooter {
 
                             if(shooterRPMStableCounter >= SHOOTER_RPM_STEADY_THRESHOLD)
                             {
+                                System.out.println("ready");
                                 shooterState = ShooterState.READY;
                                 shooterRPMStableCounter = 0;
                             }
@@ -151,6 +152,7 @@ public class CatzShooter {
                     case READY:
                         if(!rumbleSet)
                         {
+                            System.out.println("rumblin'");
                             Robot.xboxAux.setRumble(RumbleType.kLeftRumble, 1.0);
                             rumbleSet = true;
                         }
@@ -159,18 +161,24 @@ public class CatzShooter {
                     case SHOOTING:
                         shootingCounter++;
 
-                        Robot.indexer.feedCubeToShooter();
+                        //Robot.indexer.feedCubeToShooter(); TBD UNCOMMENT
 
                         if(shootingCounter >= SHOOTING_COUNTER_THRESHOLD)
                         {
-                            Robot.indexer.indexerOff();
+                            //Robot.indexer.indexerOff(); TBD uncomment
                             shooterOff(); //TBD make a button to abort
                         }
                     break;
                 }
+
     }
 
-    public void cmdProcShooter(boolean topScore, boolean midScore, boolean cubeTransfer, boolean shoot)
+    
+
+    /**
+     * parameters: topscore, midscore, cubetransfer, shoot
+     **/
+    public void cmdProcShooter(boolean topScore, boolean midScore, boolean cubeTransfer, boolean shoot, boolean abort)
     {
         if(topScore)
         {
@@ -188,10 +196,21 @@ public class CatzShooter {
             botRollerTargetRPM = SHOOT_VEL_CUBE_TRANSFER_BOT;
         }
         
-        else if(shoot)
+        if(shoot)
         {
             shoot();
         }
+
+        if(abort)
+        {
+            shooterOff();
+        }
+    }
+
+    public void printTemperatures()
+    {
+        System.out.println("Top: " + topRoller.getTemperature());
+        System.out.println("Btm: " + btmRoller.getTemperature());
     }
 
     private void shoot()
@@ -218,11 +237,21 @@ public class CatzShooter {
 
     private void setTargetVelocity()
     {
-        double velTop = Conversions.RPMToFalcon(topRollerRPM, topRollerGearRatio);
+        double velTop = -Conversions.RPMToFalcon(topRollerTargetRPM, topRollerGearRatio);
         topRoller.set(ControlMode.Velocity, velTop);
 
-        double velBot = Conversions.RPMToFalcon(botRollerRPM, botRollerGearRatio);
+        double velBot = Conversions.RPMToFalcon(botRollerTargetRPM, botRollerGearRatio);
         btmRoller.set(ControlMode.Velocity, velBot);
+        System.out.println(velTop);
+    }
+
+    public void smartdashboardShooter()
+    {
+        SmartDashboard.putNumber("top sensor velocity", topRoller.getSelectedSensorVelocity());
+        SmartDashboard.putNumber("btm sensor velocity", btmRoller.getSelectedSensorVelocity());
+        SmartDashboard.putNumber("toproller RPM", topRollerRPM);
+        SmartDashboard.putNumber("bottomroller RPM", botRollerRPM);
+        
     }
 
     

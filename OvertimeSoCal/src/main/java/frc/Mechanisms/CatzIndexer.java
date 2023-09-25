@@ -49,7 +49,7 @@ public class CatzIndexer {
         rtIndexerMotor.setInverted(true);
         rtIndexerMotor.follow(ltIndexerMotor);
 
-        indexerBeamBreak = new DigitalInput(INDEXER_BEAM_BREAK_DIO_PORT);
+        //indexerBeamBreak = new DigitalInput(INDEXER_BEAM_BREAK_DIO_PORT); TBD UNComment
     }
 
     //False means the beam broke and true means the beams are connected??

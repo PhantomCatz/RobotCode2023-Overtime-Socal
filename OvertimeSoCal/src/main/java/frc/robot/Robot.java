@@ -7,7 +7,7 @@ package frc.robot;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
 import frc.Mechanisms.CatzShooter;
-import frc.Mechanisms.CatzIndexer;
+//import frc.Mechanisms.CatzIndexer;
 import frc.Mechanisms.CatzIntake;
 
 /**
@@ -24,7 +24,7 @@ public class Robot extends TimedRobot {
    */
 
    public static final CatzIntake intake = new CatzIntake();
-   public static final CatzIndexer indexer = new CatzIndexer();
+   //public static final CatzIndexer indexer = new CatzIndexer();
    public static final CatzShooter shooter = new CatzShooter();
 
    private final int XBOX_AUX_PORT = 1;
@@ -35,12 +35,13 @@ public class Robot extends TimedRobot {
    public void robotInit()
    {
       xboxAux = new XboxController(XBOX_AUX_PORT);
+      shooter.printTemperatures();
    }
 
    @Override
    public void robotPeriodic()
    {
-
+      shooter.smartdashboardShooter();
    }
 
    @Override
@@ -58,7 +59,12 @@ public class Robot extends TimedRobot {
    @Override
    public void teleopPeriodic()
    {
-      shooter.cmdProcShooter(xboxAux.getYButtonPressed(), xboxAux.getBButtonPressed(), xboxAux.getXButtonPressed(), xboxAux.getAButtonPressed());
+      shooter.cmdProcShooter(xboxAux.getYButtonPressed(), 
+      xboxAux.getXButtonPressed(), 
+      xboxAux.getAButtonPressed(), 
+      xboxAux.getBButtonPressed(),
+      xboxAux.getStartButtonPressed());
+      
       shooter.shooterPeriodicUpdate();
 
       intake.cmdProcIntake(xboxAux.getRightStickButton(), xboxAux.getLeftTriggerAxis(), xboxAux.getRightTriggerAxis());
