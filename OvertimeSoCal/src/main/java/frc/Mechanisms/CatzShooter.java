@@ -74,9 +74,9 @@ public class CatzShooter {
     private final double kD_BOT_CUBE = 0.0;
 
 
-    private final int TOP_PID_SLOT = 0;
-    private final int MID_PID_SLOT = 1;
-    private final int CUBE_PID_SLOT = 2;
+    private static final int TOP_PID_SLOT = 0;
+    private static final int MID_PID_SLOT = 1;
+    private static final int CUBE_PID_SLOT = 2;
 
     private final int TOP_ROLLER_CAN_ID = 11; //see component map
     private final int BTM_ROLLER_CAN_ID  = 10;
@@ -101,17 +101,19 @@ public class CatzShooter {
 
     public enum ShootingMode
     {
-        HIGH(SHOOT_VEL_HIGH_TOP, SHOOT_VEL_HIGH_BOT),
-        MID(SHOOT_VEL_MID_TOP, SHOOT_VEL_MID_BOT),
-        CUBE_TRANSFER(SHOOT_VEL_CUBE_TRANSFER_TOP, SHOOT_VEL_CUBE_TRANSFER_BOT);
+        HIGH(SHOOT_VEL_HIGH_TOP, SHOOT_VEL_HIGH_BOT, TOP_PID_SLOT),
+        MID(SHOOT_VEL_MID_TOP, SHOOT_VEL_MID_BOT, MID_PID_SLOT),
+        CUBE_TRANSFER(SHOOT_VEL_CUBE_TRANSFER_TOP, SHOOT_VEL_CUBE_TRANSFER_BOT, CUBE_PID_SLOT);
 
         public double shootVelTop;
         public double shootVelBtm;
+        public int pidSlot;
 
-        private ShootingMode(double shootVelTop, double shootVelBtm)
+        private ShootingMode(double shootVelTop, double shootVelBtm, int pidSlot)
         {
             this.shootVelTop = shootVelTop;
             this.shootVelBtm = shootVelBtm;
+            this.pidSlot = pidSlot;
         }
     }
 
@@ -294,33 +296,21 @@ public class CatzShooter {
         
         if(topScore)
         {
-            topRoller.selectProfileSlot(TOP_PID_SLOT, 0);
-            btmRoller.selectProfileSlot(TOP_PID_SLOT, 0);
-
-            topRollerTargetRPM = SHOOT_VEL_HIGH_TOP;
-            botRollerTargetRPM = SHOOT_VEL_HIGH_BOT;
+            setShootingMode(ShootingMode.HIGH);
 
             setTargetVelocity();
             //topRoller.set(ControlMode.PercentOutput, 0.32);
         }
         else if(midScore)
         {
-            topRoller.selectProfileSlot(MID_PID_SLOT, 0);
-            btmRoller.selectProfileSlot(MID_PID_SLOT, 0);
-
-            topRollerTargetRPM = SHOOT_VEL_MID_TOP;
-            botRollerTargetRPM = SHOOT_VEL_MID_BOT;
+            setShootingMode(ShootingMode.MID);
 
             setTargetVelocity();
             //topRoller.set(0.34);
         }
         else if(cubeTransfer)
         {
-            topRoller.selectProfileSlot(CUBE_PID_SLOT, 0);
-            btmRoller.selectProfileSlot(CUBE_PID_SLOT, 0);
-
-            topRollerTargetRPM = SHOOT_VEL_CUBE_TRANSFER_TOP;
-            botRollerTargetRPM = SHOOT_VEL_CUBE_TRANSFER_BOT;
+            setShootingMode(ShootingMode.CUBE_TRANSFER);
 
             setTargetVelocity();
             //topRoller.set(0.36);
@@ -335,6 +325,15 @@ public class CatzShooter {
         {
             shooterOff();
         }
+    }
+
+    public void setShootingMode(ShootingMode mode)
+    {
+        topRoller.selectProfileSlot(mode.pidSlot, 0);
+        btmRoller.selectProfileSlot(mode.pidSlot, 0);
+
+        topRollerTargetRPM = mode.shootVelTop;
+        botRollerTargetRPM = mode.shootVelBtm;
     }
 
     // order of args: all scoring buttons, shoot, abort
@@ -404,8 +403,7 @@ public class CatzShooter {
     /* FOR AUTONOMOUS */
     public void cubeScore(ShootingMode mode, double timeout)
     {
-        topRollerTargetRPM = mode.shootVelTop;
-        botRollerTargetRPM = mode.shootVelBtm;
+        setShootingMode(mode);
 
         shooterState = ShooterState.WAIT_FOR_STEADY;
 
@@ -428,6 +426,8 @@ public class CatzShooter {
     {
         topRollerTargetRPM = mode.shootVelTop;
         botRollerRPM       = mode.shootVelBtm;
+
+        shooterState = ShooterState.WAIT_FOR_STEADY;
     }
 
     public boolean finishedShooting()
