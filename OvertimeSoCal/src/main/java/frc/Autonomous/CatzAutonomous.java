@@ -5,6 +5,7 @@ import frc.DataLogger.CatzLog;
 import frc.DataLogger.DataCollection;
 import frc.robot.*;
 
+@SuppressWarnings("unused")
 public class CatzAutonomous 
 {
     private final double SDS_L1_GEAR_RATIO = 8.14;       //SDS mk4i L1 ratio
@@ -23,15 +24,22 @@ public class CatzAutonomous
     //drive straight variables
     //drive power
     private final double DRV_S_KP = 0.02; //TBD // decel distance in inches = DRV_S_MAX_POWER/DRV_S_KP = 35 inch
+    private final double DRV_BACK_KP = 0.035;
 
     private final double DRV_S_THRESHOLD_INCH = 0.5;
     private final double DRV_S_MIN_POWER      = 0.1;
     private final double DRV_S_MAX_POWER      = 0.7;
     private final double DRV_S_MAX_POWER_CHARGE_STATION = 0.5;
 
+    private final double DRV_S_MIN_POWER_ROLL_BACK = 0.15;
+    private final double DRV_S_MAX_POWER_ROLL_BACK = 0.7;
+
     //turn power
     private final double DRV_S_ERROR_GAIN    = 0.032;
     private final double DRV_S_RATE_GAIN     = 0.003;
+
+    private final double DRV_S_ERROR_GAIN_ON_STATION = 0.048;//increased by 15%
+    private final double DRV_S_RATE_GAIN_ION_STATION     = 0.003;
 
     //turn in place variables
     private final static double PID_TURN_THRESHOLD   = 1.25;
@@ -155,7 +163,7 @@ public class CatzAutonomous
                     turnPower *= Math.signum(drvPowerDirection);
                     
 
-                    Robot.drivetrain.translateTurn(directionDeg, drvPower * 0.5, turnPower, Robot.drivetrain.getGyroAngle());
+                    Robot.drivetrain.translateTurn(directionDeg, drvPower, turnPower, Robot.drivetrain.getGyroAngle());
                     prevTime       = time;
                     prevAngleError = angleError;
 
@@ -184,7 +192,7 @@ public class CatzAutonomous
         Robot.drivetrain.translateTurn(directionDeg, 0.0, 0.0, Robot.drivetrain.getGyroAngle());
     }
 
-    public void DriveStraightoffChargeStation(double distanceInch, double directionDeg, double maxTime)
+    public void DriveStraightOFFChargeStation(double distanceInch, double directionDeg, double maxTime)
     {
         double distanceRemainInch    = 0.0;
         double distanceRemainAbsInch = 0.0;
@@ -290,6 +298,121 @@ public class CatzAutonomous
                                                             turnPower,
                                                             Robot.drivetrain.LT_FRNT_MODULE.getAngle(),
                                                             0.0, 0.0, 0);  
+                Robot.dataCollection.logData.add(data);
+            }
+         
+            Timer.delay(DRV_S_THREAD_PERIOD);
+        }
+
+        Robot.drivetrain.translateTurn(directionDeg, 0.0, 0.0, Robot.drivetrain.getGyroAngle());
+    }
+
+    public void DriveStraightONChargeStationFromBack(double distanceInch, double directionDeg, double maxTime)
+    {
+        double distanceRemainInch    = 0.0;
+        double distanceRemainAbsInch = 0.0;
+
+        double drvPowerDirection = 0.0;
+        double drvPower      = 0.0;
+        double drvPowerKp    = 0.0;
+        double drvPowerClamp = 0.0;
+
+        double turnPower    = 0.0;
+        double angleKpPower = 0.0;
+        double angleKdPower = 0.0;
+
+        double angleError     = 0.0;
+        double prevAngleError = 0.0;
+        double angleErrorRate = 0.0;
+
+        double time     = 0.0;
+        double prevTime = -1.0;
+
+        double deltaPositionCnts  = 0.0;
+
+        double currentAngle     = 0.0;
+        double startingAngle    = 0.0;
+
+        boolean done = false;
+
+        Robot.drivetrain.LT_FRNT_MODULE.resetDrvDistance();
+        deltaPositionCnts = 0.0;
+
+        startingAngle         = Robot.navX.getAngle();
+        distanceRemainInch    = distanceInch;
+        distanceRemainAbsInch = Math.abs(distanceRemainInch);
+
+        autonTimer.reset();
+        autonTimer.start();
+
+        while(!done)
+        {
+            time = autonTimer.get();
+
+            if(time > maxTime)
+            {
+                done = true;
+                Robot.drivetrain.translateTurn(directionDeg, 0.0, 0.0, Robot.drivetrain.getGyroAngle());
+            }
+            else
+            {
+                currentAngle = Robot.navX.getAngle();
+                
+                angleError = startingAngle - currentAngle;
+
+                if(prevTime == -1.0)
+                {
+                    angleErrorRate = 0.0;
+                }
+                else
+                {
+                    angleErrorRate = (angleError - prevAngleError) / (time - prevTime);
+                }
+    
+                deltaPositionCnts   = Robot.drivetrain.LT_FRNT_MODULE.getDrvDistance();
+                distanceRemainInch    = distanceInch - (deltaPositionCnts * DRVTRAIN_ENC_COUNTS_TO_INCH);
+                distanceRemainAbsInch = Math.abs(distanceRemainInch);
+                drvPowerDirection     = Math.signum(distanceRemainInch);
+
+                if(distanceRemainAbsInch <= DRV_S_THRESHOLD_INCH)
+                {
+                    done = true;
+                    Robot.drivetrain.translateTurn(directionDeg, 0.0, 0.0, Robot.drivetrain.getGyroAngle());
+                }
+                else
+                {
+                    drvPowerKp    = (DRV_BACK_KP * distanceRemainAbsInch);
+                    drvPowerClamp = Clamp(DRV_S_MIN_POWER_ROLL_BACK, drvPowerKp, DRV_S_MAX_POWER_ROLL_BACK);
+                    drvPower      = drvPowerClamp * Math.signum(drvPowerDirection);
+
+
+                    angleKpPower = DRV_S_ERROR_GAIN * angleError;
+                    angleKdPower = DRV_S_RATE_GAIN  * angleErrorRate;
+
+                    turnPower = Clamp(-1.0, angleKpPower + angleKdPower, 1.0);
+                    turnPower *= Math.signum(drvPowerDirection);
+                    
+
+                    Robot.drivetrain.translateTurn(directionDeg, drvPower, turnPower, Robot.drivetrain.getGyroAngle());
+                    prevTime       = time;
+                    prevAngleError = angleError;
+
+                }
+            }
+            if(DataCollection.chosenDataID.getSelected() == DataCollection.LOG_ID_BALANCE)
+            {
+               data = new CatzLog(time, deltaPositionCnts, distanceRemainInch,
+                                                            drvPowerKp,
+                                                            drvPowerClamp, 
+                                                            drvPower, 
+                                                            currentAngle,
+                                                            angleError, 
+                                                            angleErrorRate, 
+                                                            angleKpPower,
+                                                            angleKdPower,
+                                                            turnPower,
+                                                            Robot.drivetrain.LT_FRNT_MODULE.getAngle(),
+                                                            Robot.navX.getRoll(), 0.0, 0);  
                 Robot.dataCollection.logData.add(data);
             }
          

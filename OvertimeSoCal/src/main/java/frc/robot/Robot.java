@@ -93,7 +93,6 @@ public class Robot extends TimedRobot {
 
    @Override
    public void autonomousPeriodic() {
-      shooter.shooterPeriodicUpdate();
    }
 
    @Override
@@ -115,8 +114,6 @@ public class Robot extends TimedRobot {
             xboxAux.getAButtonPressed(),
             xboxAux.getBButtonPressed(),
             xboxAux.getStartButtonPressed());
-
-      shooter.shooterPeriodicUpdate();
 
       intake.cmdProcIntake(xboxAux.getRightStickButton(), xboxAux.getLeftTriggerAxis(), xboxAux.getRightTriggerAxis());
    }

@@ -12,6 +12,7 @@ import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.Utils.Conversions;
@@ -32,15 +33,15 @@ public class CatzShooter {
     private final WPI_TalonFX btmRoller; 
     private final CANSparkMax feeder;
 
-    private final double SHOOT_VEL_HIGH_TOP = 1000;
-    private final double SHOOT_VEL_HIGH_BOT = 1000;
+    private final static double SHOOT_VEL_HIGH_TOP = 1000;
+    private final static double SHOOT_VEL_HIGH_BOT = 1000;
     
-    private final double SHOOT_VEL_MID_TOP  = 700;
-    private final double SHOOT_VEL_MID_BOT  = 700; //600 rpm; kF * 0.75
+    private final static double SHOOT_VEL_MID_TOP  = 700;
+    private final static double SHOOT_VEL_MID_BOT  = 700; //600 rpm; kF * 0.75
                                                     //1000 rpm; kF * 0.48
 
-    private final double SHOOT_VEL_CUBE_TRANSFER_TOP = 800;
-    private final double SHOOT_VEL_CUBE_TRANSFER_BOT = 800;
+    private final static double SHOOT_VEL_CUBE_TRANSFER_TOP = 800;
+    private final static double SHOOT_VEL_CUBE_TRANSFER_BOT = 800;
 
     private final double kF_TOP_TOP = 0.048;
     private final double kP_TOP_TOP = 0.0;
@@ -96,6 +97,22 @@ public class CatzShooter {
         WAIT_FOR_STEADY,
         READY,
         SHOOTING;
+    }
+
+    public enum ShootingMode
+    {
+        HIGH(SHOOT_VEL_HIGH_TOP, SHOOT_VEL_HIGH_BOT),
+        MID(SHOOT_VEL_MID_TOP, SHOOT_VEL_MID_BOT),
+        CUBE_TRANSFER(SHOOT_VEL_CUBE_TRANSFER_TOP, SHOOT_VEL_CUBE_TRANSFER_BOT);
+
+        public double shootVelTop;
+        public double shootVelBtm;
+
+        private ShootingMode(double shootVelTop, double shootVelBtm)
+        {
+            this.shootVelTop = shootVelTop;
+            this.shootVelBtm = shootVelBtm;
+        }
     }
 
     private ShooterState shooterState = ShooterState.OFF;
@@ -194,66 +211,73 @@ public class CatzShooter {
         btmRoller.config_kP(CUBE_PID_SLOT, kP_BOT_CUBE);
         btmRoller.config_kI(CUBE_PID_SLOT, kI_BOT_CUBE);
         btmRoller.config_kD(CUBE_PID_SLOT, kD_BOT_CUBE);
+
+        startShooterThread();
     }
 
-    public void shooterPeriodicUpdate()
+    public void startShooterThread()
     {
-        topRollerRPM = Math.abs(topRoller.getSelectedSensorVelocity() * MOTOR_RPM_CONVERSION_FACTOR);
-        botRollerRPM = Math.abs(btmRoller.getSelectedSensorVelocity() * MOTOR_RPM_CONVERSION_FACTOR);
-
-        // System.out.println("Target: " + topRollerTargetRPM);
-        // System.out.println("Current: " + topRollerRPM);
-
-        //System.out.println("TOp: " + topRollerRPM);
-        //System.out.println("rotation per 100ms " + Math.abs(topRoller.getSelectedSensorVelocity()));
-        //System.out.println("Btm: " + botRollerRPM);
-
-        switch(shooterState)
-        {
-            case OFF:
-                if(topRollerTargetRPM > 0.0)
-                {
-                    rumbleSet = false;
-                }
-            break;
-
-            case WAIT_FOR_STEADY:
-                if(Util.epsilonEquals(topRollerRPM, topRollerTargetRPM, SHOOTER_RPM_STEADY_RANGE) && Util.epsilonEquals(botRollerRPM, botRollerTargetRPM, SHOOTER_RPM_STEADY_RANGE))
-                {
-                    shooterRPMStableCounter++;
-
-                    if(shooterRPMStableCounter >= SHOOTER_RPM_STEADY_THRESHOLD)
+        Thread shooterThread = new Thread(()->{
+            topRollerRPM = Math.abs(topRoller.getSelectedSensorVelocity() * MOTOR_RPM_CONVERSION_FACTOR);
+            botRollerRPM = Math.abs(btmRoller.getSelectedSensorVelocity() * MOTOR_RPM_CONVERSION_FACTOR);
+    
+            // System.out.println("Target: " + topRollerTargetRPM);
+            // System.out.println("Current: " + topRollerRPM);
+    
+            //System.out.println("TOp: " + topRollerRPM);
+            //System.out.println("rotation per 100ms " + Math.abs(topRoller.getSelectedSensorVelocity()));
+            //System.out.println("Btm: " + botRollerRPM);
+    
+            switch(shooterState)
+            {
+                case OFF:
+                    if(topRollerTargetRPM > 0.0)
                     {
-                        System.out.println("ready");
-                        shooterState = ShooterState.READY;
+                        shooterState = ShooterState.WAIT_FOR_STEADY;
+                        rumbleSet = false;
+                    }
+                break;
+    
+                case WAIT_FOR_STEADY:
+                    if(Util.epsilonEquals(topRollerRPM, topRollerTargetRPM, SHOOTER_RPM_STEADY_RANGE) && Util.epsilonEquals(botRollerRPM, botRollerTargetRPM, SHOOTER_RPM_STEADY_RANGE))
+                    {
+                        shooterRPMStableCounter++;
+    
+                        if(shooterRPMStableCounter >= SHOOTER_RPM_STEADY_THRESHOLD)
+                        {
+                            System.out.println("ready");
+                            shooterState = ShooterState.READY;
+                            shooterRPMStableCounter = 0;
+                        }
+                    }
+                    else
+                    {
                         shooterRPMStableCounter = 0;
                     }
-                }
-                else
-                {
-                    shooterRPMStableCounter = 0;
-                }
-            break;
+                break;
+    
+                case READY:
+                    if(!rumbleSet)
+                    {
+                        System.out.println("rumblin'");
+                        Robot.xboxAux.setRumble(RumbleType.kLeftRumble, 1.0);
+                        rumbleSet = true;
+                    }
+                break;
+    
+                case SHOOTING:
+                    shootingCounter++;
+    
+                    if(shootingCounter >= SHOOTING_COUNTER_THRESHOLD)
+                    {
+                        shooterOff(); //TBD make a button to abort
+                    }
+                break;
+            }
+            Timer.delay(0.02);
+        });
 
-            case READY:
-                if(!rumbleSet)
-                {
-                    System.out.println("rumblin'");
-                    Robot.xboxAux.setRumble(RumbleType.kLeftRumble, 1.0);
-                    rumbleSet = true;
-                }
-            break;
-
-            case SHOOTING:
-                shootingCounter++;
-
-                if(shootingCounter >= SHOOTING_COUNTER_THRESHOLD)
-                {
-                    shooterOff(); //TBD make a button to abort
-                }
-            break;
-        }
-
+        shooterThread.start();
     }
 
     
@@ -342,7 +366,7 @@ public class CatzShooter {
         System.out.println("Btm: " + btmRoller.getTemperature());
     }
 
-    private void shoot()
+    public void shoot()
     {
         shooterState = ShooterState.SHOOTING;
         feeder.set(FEEDER_SPEED);
@@ -373,9 +397,40 @@ public class CatzShooter {
 
         double velBot = Conversions.RPMToFalcon(botRollerTargetRPM, 1.0);
         btmRoller.set(ControlMode.Velocity, velBot);
-        System.out.println("velTop value " + Math.abs(velTop));
+    }
+
+    /* FOR AUTONOMOUS */
+    public void cubeScore(ShootingMode mode, double timeout)
+    {
+        topRollerTargetRPM = mode.shootVelTop;
+        botRollerTargetRPM = mode.shootVelBtm;
 
         shooterState = ShooterState.WAIT_FOR_STEADY;
+
+        setTargetVelocity();
+
+        double startTime = Timer.getFPGATimestamp();
+        double elapsedTime = 0.0;
+        while(true) //wait for shooter to rev up
+        {
+            elapsedTime = Timer.getFPGATimestamp() - startTime;
+            if(shooterState == ShooterState.READY || elapsedTime >= timeout)
+            {
+                shoot();
+                break;
+            }
+        }
+    }
+
+    public void revUpShootMotor(ShootingMode mode)
+    {
+        topRollerTargetRPM = mode.shootVelTop;
+        botRollerRPM       = mode.shootVelBtm;
+    }
+
+    public boolean finishedShooting()
+    {
+        return shooterState == ShooterState.OFF;
     }
 
     public void smartdashboardShooter()

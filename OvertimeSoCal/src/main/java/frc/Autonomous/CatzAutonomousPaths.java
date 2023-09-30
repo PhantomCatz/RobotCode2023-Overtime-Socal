@@ -1,11 +1,12 @@
 package frc.Autonomous;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeoutException;
 
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-
+import frc.Mechanisms.CatzShooter.ShootingMode;
 import frc.robot.Robot;
 
 /*****************************************************************************************
@@ -25,6 +26,8 @@ public class CatzAutonomousPaths
     private final double FWD_OR_BWD  =   0.0 + BIAS_OFFSET;
     private final double RIGHT       =   90.0; 
     private final double LEFT        =   -90.0;
+
+    private double direction         = 0.0;
 
     /*------------------------------------------------------------------------------------
     *  Path ID's
@@ -91,6 +94,15 @@ public class CatzAutonomousPaths
     {
         pathID = chosenPath.getSelected();
 
+        if(chosenAllianceColor.getSelected() == Robot.constants.RED_ALLIANCE)
+        {
+            direction = LEFT;
+        }
+        else
+        {
+            direction = RIGHT;
+        }
+
         System.out.println("PathID: " + pathID);
 
         switch (pathID)
@@ -130,6 +142,15 @@ public class CatzAutonomousPaths
         Robot.balance.StartBalancing();
     }
 
+    private void cubeScore(ShootingMode mode)
+    {
+        Robot.shooter.cubeScore(mode, 2.0);
+
+        while(!Robot.shooter.finishedShooting())
+        {
+            //wait for shooting to finish
+        }
+    }
 
     /*-----------------------------------------------------------------------------------------
     *    
@@ -139,21 +160,71 @@ public class CatzAutonomousPaths
     
     private void centerScore1IntakeBalance()
     {
+        cubeScore(ShootingMode.HIGH);
 
+        CompletableFuture.runAsync(()->{
+            Timer.delay(4.0); //TBD tune later
+            //deploy intake
+            //run intake
+        });
+        Robot.auton.DriveStraightOFFChargeStation(170.0, FWD_OR_BWD, 4.0);
+        Timer.delay(1.0);
+        //stow intake
+        Robot.auton.DriveStraightONChargeStationFromBack(-108, FWD_OR_BWD, 4.0); 
+        Robot.balance.StartBalancing();
     }
 
     private void centerScore1Balance()
     {
+        cubeScore(ShootingMode.HIGH);
 
+        Robot.auton.DriveStraight(-70, FWD_OR_BWD, 4.0); 
+        Balance();
     }
 
     private void rightScore2()
     {
+        cubeScore(ShootingMode.HIGH);
 
+        CompletableFuture.runAsync(()->{
+            //deploy intake
+            //run intake
+        });
+
+        Robot.auton.DriveStraight(-200, FWD_OR_BWD, 5.0);
+
+        Timer.delay(1.0);
+
+        CompletableFuture.runAsync(()->{
+            //stop intake motors
+            //stow intake
+            Robot.shooter.revUpShootMotor(ShootingMode.MID);
+        });
+
+        Robot.auton.DriveStraight(200, FWD_OR_BWD, 5.0);
+        Robot.shooter.shoot();
     }
 
     private void leftScore2()
     {
+        cubeScore(ShootingMode.HIGH);
 
+        CompletableFuture.runAsync(()->{
+            //deploy intake
+            //run intake
+        });
+
+        Robot.auton.DriveStraight(-200, FWD_OR_BWD, 5.0);
+
+        Timer.delay(1.0);
+
+        CompletableFuture.runAsync(()->{
+            //stop intake motors
+            //stow intake
+            Robot.shooter.revUpShootMotor(ShootingMode.MID);
+        });
+
+        Robot.auton.DriveStraight(200, FWD_OR_BWD, 5.0);
+        Robot.shooter.shoot();
     }
 }
