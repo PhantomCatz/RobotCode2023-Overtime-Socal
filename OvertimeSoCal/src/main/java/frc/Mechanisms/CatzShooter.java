@@ -1,13 +1,17 @@
 package frc.Mechanisms;
 
-import javax.lang.model.util.ElementScanner14;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.xml.transform.Source;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
+import com.revrobotics.CANSparkMax;
+import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.Utils.Conversions;
@@ -26,23 +30,58 @@ public class CatzShooter {
 
     private final WPI_TalonFX topRoller; //change name to top and bottom //make variable names the same length
     private final WPI_TalonFX btmRoller; 
+    private final CANSparkMax feeder;
 
-    private final double topRollerGearRatio = 2.0 / 1.0;
-    private final double botRollerGearRatio = 2.0 / 1.0;
+    private final double SHOOT_VEL_HIGH_TOP = 700;
+    private final double SHOOT_VEL_HIGH_BOT = 700;
+    
+    private final double SHOOT_VEL_MID_TOP  = 1500;
+    private final double SHOOT_VEL_MID_BOT  = 1500; //600 rpm; kF * 0.75
+                                                    //1000 rpm; kF * 0.48
+    
+    private final double SHOOT_VEL_CUBE_TRANSFER_TOP = 800;
+    private final double SHOOT_VEL_CUBE_TRANSFER_BOT = 800;
 
-    private final double kF_TOP = 0.6; 
-    private final double kP_TOP = 0.01; 
-    private final double kI_TOP = 0.0;
-    private final double kD_TOP = 0.0;
+    private final double RPM_TO_PERCENT_OUTPUT = 0.0001;
 
-    private final double kF_BOT = 0.6; 
-    private final double kP_BOT = 0.01; 
-    private final double kI_BOT = 0.0;
-    private final double kD_BOT = 0.0;
+    private final double kF_TOP_TOP = 0.046;//SHOOT_VEL_HIGH_TOP * RPM_TO_PERCENT_OUTPUT; 
+    private final double kP_TOP_TOP = 0;//kF_TOP_TOP * 0.2; 
+    private final double kI_TOP_TOP = 0.0;
+    private final double kD_TOP_TOP = 0.0;
 
+    private final double kF_BOT_TOP = SHOOT_VEL_HIGH_BOT * RPM_TO_PERCENT_OUTPUT; 
+    private final double kP_BOT_TOP = kF_BOT_TOP * 0.2; 
+    private final double kI_BOT_TOP = 0.0;
+    private final double kD_BOT_TOP = 0.0;
+
+    private final double kF_TOP_MID = 0.0;//KF_TOP_MID: 0.046; 
+    private final double kP_TOP_MID = 0.0;//0.000001;//kP_TOP_MID: 0.000001; 
+    private final double kI_TOP_MID = 0.0;
+    private final double kD_TOP_MID = 0.0;
+
+    private final double kF_BOT_MID = 0.0;//SHOOT_VEL_MID_BOT * RPM_TO_PERCENT_OUTPUT; 
+    private final double kP_BOT_MID = 0.0;//0.000001;//kF_BOT_MID * 0.02; 
+    private final double kI_BOT_MID = 0.0;
+    private final double kD_BOT_MID = 0.0;
+
+    private final double kF_TOP_CUBE = SHOOT_VEL_CUBE_TRANSFER_TOP * RPM_TO_PERCENT_OUTPUT; 
+    private final double kP_TOP_CUBE = kF_TOP_CUBE * 0.2; 
+    private final double kI_TOP_CUBE = 0.0;
+    private final double kD_TOP_CUBE = 0.0;
+
+    private final double kF_BOT_CUBE = SHOOT_VEL_CUBE_TRANSFER_BOT * RPM_TO_PERCENT_OUTPUT; 
+    private final double kP_BOT_CUBE = kF_BOT_CUBE * 0.2; 
+    private final double kI_BOT_CUBE = 0.0;
+    private final double kD_BOT_CUBE = 0.0;
+
+
+    private final int TOP_PID_SLOT = 0;
+    private final int MID_PID_SLOT = 1;
+    private final int CUBE_PID_SLOT = 2;
 
     private final int TOP_ROLLER_CAN_ID = 11; //see component map
     private final int BTM_ROLLER_CAN_ID  = 10;
+    private final int FEEDER_ROLLER_CAN_ID = 12;
 
     private final SupplyCurrentLimitConfiguration currentLimit;
 
@@ -51,13 +90,7 @@ public class CatzShooter {
     private final double  CURRENT_LIMIT_TIMEOUT_SECONDS = 0.5;
     private final boolean ENABLE_CURRENT_LIMIT          = true;
 
-    private final double SHOOT_VEL_CUBE_TRANSFER_TOP = 10; //RPM
-    private final double SHOOT_VEL_HIGH_TOP = 50;
-    private final double SHOOT_VEL_MID_TOP = 45;
-
-    private final double SHOOT_VEL_CUBE_TRANSFER_BOT = 10; //RPM
-    private final double SHOOT_VEL_HIGH_BOT = 50;
-    private final double SHOOT_VEL_MID_BOT = 45;
+    private final double FEEDER_SPEED = 0.5;
 
     private enum ShooterState
     {
@@ -79,19 +112,50 @@ public class CatzShooter {
     private final int SHOOTER_RPM_STEADY_THRESHOLD = 10; //0.1 second
 
     private int shootingCounter = 0;
-    private final int SHOOTING_COUNTER_THRESHOLD = 200; //two seconds
+    private final int SHOOTING_COUNTER_THRESHOLD = 100; //two seconds
 
     private final double SHOOTER_RPM_STEADY_RANGE = 50.0;
 
     private final double MOTOR_RPM_CONVERSION_FACTOR = 10.0 * 60.0 / 2048.0;
 
-
     boolean rumbleSet = false;
+
+    private Map<String, Double[]> stateMapTop = new HashMap<>();
+    private String[] targetStatesTop;
+    private Map<String, Double[]> stateMapBtm = new HashMap<>();
+    private String[] targetStatesBtm;
 
     public CatzShooter()
     {
         topRoller = new WPI_TalonFX(TOP_ROLLER_CAN_ID);
         btmRoller = new WPI_TalonFX(BTM_ROLLER_CAN_ID);
+
+        feeder = new CANSparkMax(FEEDER_ROLLER_CAN_ID, MotorType.kBrushless);
+
+        //first 4 are FPID, last is target speed
+        // stateMapTop.put("Top", new Double[] {0.6, 0.1, 0.0, 0.0, 0.0});
+        // stateMapTop.put("Mid", new Double[] {0.6, 0.1, 0.0, 0.0, 0.0});
+        // stateMapTop.put("Cube", new Double[] {0.6, 0.1, 0.0, 0.0, 0.0});
+        // targetStatesTop = (String[]) stateMapTop.keySet().toArray();
+
+        // stateMapBtm.put("Top", new Double[] {0.6, 0.1, 0.0, 0.0, 0.0});
+        // stateMapBtm.put("Mid", new Double[] {0.6, 0.1, 0.0, 0.0, 0.0});
+        // stateMapBtm.put("Cube", new Double[] {0.6, 0.1, 0.0, 0.0, 0.0});
+        // targetStatesBtm = (String[]) stateMapTop.keySet().toArray();
+
+        // for(int i=0; i < targetStatesTop.length; i++){
+        //     topRoller.config_kF(i, stateMapTop.get(targetStatesTop[i])[0]);
+        //     topRoller.config_kP(i, stateMapTop.get(targetStatesTop[i])[1]);
+        //     topRoller.config_kI(i, stateMapTop.get(targetStatesTop[i])[2]);
+        //     topRoller.config_kD(i, stateMapTop.get(targetStatesTop[i])[3]);
+        // }
+
+        // for(int i=0; i < targetStatesTop.length; i++){
+        //     btmRoller.config_kF(i, stateMapTop.get(targetStatesTop[i])[0]);
+        //     btmRoller.config_kP(i, stateMapTop.get(targetStatesTop[i])[1]);
+        //     btmRoller.config_kI(i, stateMapTop.get(targetStatesTop[i])[2]);
+        //     btmRoller.config_kD(i, stateMapTop.get(targetStatesTop[i])[3]);
+        // }
 
         currentLimit = new SupplyCurrentLimitConfiguration(ENABLE_CURRENT_LIMIT, CURRENT_LIMIT_AMPS, CURRENT_LIMIT_TRIGGER_AMPS, CURRENT_LIMIT_TIMEOUT_SECONDS);
 
@@ -99,77 +163,100 @@ public class CatzShooter {
         topRoller.setNeutralMode(NeutralMode.Coast);
         topRoller.configSupplyCurrentLimit(currentLimit);
 
-        topRoller.config_kF(0, kF_TOP);
-        topRoller.config_kP(0, kP_TOP);
-        topRoller.config_kI(0, kI_TOP);
-        topRoller.config_kD(0, kD_TOP);
+        topRoller.config_kF(TOP_PID_SLOT, kF_TOP_TOP);
+        topRoller.config_kP(TOP_PID_SLOT, kP_TOP_TOP);
+        topRoller.config_kI(TOP_PID_SLOT, kI_TOP_TOP);
+        topRoller.config_kD(TOP_PID_SLOT, kD_TOP_TOP);
 
+        topRoller.config_kF(MID_PID_SLOT, kF_TOP_MID);
+        topRoller.config_kP(MID_PID_SLOT, kP_TOP_MID);
+        topRoller.config_kI(MID_PID_SLOT, kI_TOP_MID);
+        topRoller.config_kD(MID_PID_SLOT, kD_TOP_MID);
+
+        topRoller.config_kF(CUBE_PID_SLOT, kF_TOP_CUBE);
+        topRoller.config_kP(CUBE_PID_SLOT, kP_TOP_CUBE);
+        topRoller.config_kI(CUBE_PID_SLOT, kI_TOP_CUBE);
+        topRoller.config_kD(CUBE_PID_SLOT, kD_TOP_CUBE);
 
         btmRoller.configFactoryDefault();
         btmRoller.setNeutralMode(NeutralMode.Coast);
         btmRoller.configSupplyCurrentLimit(currentLimit);
 
-        btmRoller.config_kF(0, kF_BOT);
-        btmRoller.config_kP(0, kP_BOT);
-        btmRoller.config_kI(0, kI_BOT);
-        btmRoller.config_kD(0, kD_BOT);
+        btmRoller.config_kF(TOP_PID_SLOT, kF_BOT_TOP);
+        btmRoller.config_kP(TOP_PID_SLOT, kP_BOT_TOP);
+        btmRoller.config_kI(TOP_PID_SLOT, kI_BOT_TOP);
+        btmRoller.config_kD(TOP_PID_SLOT, kD_BOT_TOP);
+
+        btmRoller.config_kF(MID_PID_SLOT, kF_BOT_MID);
+        btmRoller.config_kP(MID_PID_SLOT, kP_BOT_MID);
+        btmRoller.config_kI(MID_PID_SLOT, kI_BOT_MID);
+        btmRoller.config_kD(MID_PID_SLOT, kD_BOT_MID);
+
+        btmRoller.config_kF(CUBE_PID_SLOT, kF_BOT_CUBE);
+        btmRoller.config_kP(CUBE_PID_SLOT, kP_BOT_CUBE);
+        btmRoller.config_kI(CUBE_PID_SLOT, kI_BOT_CUBE);
+        btmRoller.config_kD(CUBE_PID_SLOT, kD_BOT_CUBE);
     }
 
     public void shooterPeriodicUpdate()
     {
-        topRollerRPM = topRoller.getSelectedSensorVelocity() * MOTOR_RPM_CONVERSION_FACTOR;
-        botRollerRPM = btmRoller.getSelectedSensorVelocity() * MOTOR_RPM_CONVERSION_FACTOR;
+        topRollerRPM = Math.abs(topRoller.getSelectedSensorVelocity() * MOTOR_RPM_CONVERSION_FACTOR);
+        botRollerRPM = Math.abs(btmRoller.getSelectedSensorVelocity() * MOTOR_RPM_CONVERSION_FACTOR);
 
-                switch(shooterState)
+        // System.out.println("Target: " + topRollerTargetRPM);
+        // System.out.println("Current: " + topRollerRPM);
+
+        //System.out.println("TOp: " + topRollerRPM);
+        //System.out.println("rotation per 100ms " + Math.abs(topRoller.getSelectedSensorVelocity()));
+        //System.out.println("Btm: " + botRollerRPM);
+
+        switch(shooterState)
+        {
+            case OFF:
+                if(topRollerTargetRPM > 0.0)
                 {
-                    case OFF:
-                        if(topRollerTargetRPM > 0.0)
-                        {
-                            shooterState = ShooterState.WAIT_FOR_STEADY;
-                            setTargetVelocity();
-                            rumbleSet = false;
-                        }
-                    break;
-
-                    case WAIT_FOR_STEADY:
-                        if(Util.epsilonEquals(topRollerRPM, topRollerTargetRPM, SHOOTER_RPM_STEADY_RANGE) && Util.epsilonEquals(botRollerRPM, botRollerTargetRPM, SHOOTER_RPM_STEADY_RANGE))
-                        {
-                            shooterRPMStableCounter++;
-
-                            if(shooterRPMStableCounter >= SHOOTER_RPM_STEADY_THRESHOLD)
-                            {
-                                System.out.println("ready");
-                                shooterState = ShooterState.READY;
-                                shooterRPMStableCounter = 0;
-                            }
-                        }
-                        else
-                        {
-                            shooterRPMStableCounter = 0;
-                        }
-                    break;
-
-                    case READY:
-                        if(!rumbleSet)
-                        {
-                            System.out.println("rumblin'");
-                            Robot.xboxAux.setRumble(RumbleType.kLeftRumble, 1.0);
-                            rumbleSet = true;
-                        }
-                    break;
-
-                    case SHOOTING:
-                        shootingCounter++;
-
-                        //Robot.indexer.feedCubeToShooter(); TBD UNCOMMENT
-
-                        if(shootingCounter >= SHOOTING_COUNTER_THRESHOLD)
-                        {
-                            //Robot.indexer.indexerOff(); TBD uncomment
-                            shooterOff(); //TBD make a button to abort
-                        }
-                    break;
+                    shooterState = ShooterState.WAIT_FOR_STEADY;
+                    setTargetVelocity();
+                    rumbleSet = false;
                 }
+            break;
+
+            case WAIT_FOR_STEADY:
+                if(Util.epsilonEquals(topRollerRPM, topRollerTargetRPM, SHOOTER_RPM_STEADY_RANGE) && Util.epsilonEquals(botRollerRPM, botRollerTargetRPM, SHOOTER_RPM_STEADY_RANGE))
+                {
+                    shooterRPMStableCounter++;
+
+                    if(shooterRPMStableCounter >= SHOOTER_RPM_STEADY_THRESHOLD)
+                    {
+                        System.out.println("ready");
+                        shooterState = ShooterState.READY;
+                        shooterRPMStableCounter = 0;
+                    }
+                }
+                else
+                {
+                    shooterRPMStableCounter = 0;
+                }
+            break;
+
+            case READY:
+                if(!rumbleSet)
+                {
+                    System.out.println("rumblin'");
+                    Robot.xboxAux.setRumble(RumbleType.kLeftRumble, 1.0);
+                    rumbleSet = true;
+                }
+            break;
+
+            case SHOOTING:
+                shootingCounter++;
+
+                if(shootingCounter >= SHOOTING_COUNTER_THRESHOLD)
+                {
+                    shooterOff(); //TBD make a button to abort
+                }
+            break;
+        }
 
     }
 
@@ -180,20 +267,39 @@ public class CatzShooter {
      **/
     public void cmdProcShooter(boolean topScore, boolean midScore, boolean cubeTransfer, boolean shoot, boolean abort)
     {
+        
         if(topScore)
         {
+            topRoller.selectProfileSlot(TOP_PID_SLOT, 0);
+            btmRoller.selectProfileSlot(TOP_PID_SLOT, 0);
+
             topRollerTargetRPM = SHOOT_VEL_HIGH_TOP;
             botRollerTargetRPM = SHOOT_VEL_HIGH_BOT;
+
+            
+            //topRoller.set(ControlMode.PercentOutput, 0.32);
+
         }
         else if(midScore)
         {
+            topRoller.selectProfileSlot(MID_PID_SLOT, 0);
+            btmRoller.selectProfileSlot(MID_PID_SLOT, 0);
+
             topRollerTargetRPM = SHOOT_VEL_MID_TOP;
             botRollerTargetRPM = SHOOT_VEL_MID_BOT;
+
+            //topRoller.set(0.34);
         }
         else if(cubeTransfer)
         {
+
+            topRoller.selectProfileSlot(CUBE_PID_SLOT, 0);
+            btmRoller.selectProfileSlot(CUBE_PID_SLOT, 0);
+
             topRollerTargetRPM = SHOOT_VEL_CUBE_TRANSFER_TOP;
             botRollerTargetRPM = SHOOT_VEL_CUBE_TRANSFER_BOT;
+
+            //topRoller.set(0.36);
         }
         
         if(shoot)
@@ -207,6 +313,33 @@ public class CatzShooter {
         }
     }
 
+    // order of args: all scoring buttons, shoot, abort
+    public void cmdProcShooterBetter(boolean... inputs)
+    {
+        int stateIndex = -1;
+        for(int i=0; i<targetStatesTop.length; i++){
+            if(inputs[i]){
+                stateIndex = i;
+                break;
+            }
+        }
+
+        if (stateIndex == -1){
+            if(inputs[inputs.length - 2]){
+                shoot();
+            }
+            if(inputs[inputs.length - 1]){
+                shooterOff();
+            }
+        }
+
+        topRoller.selectProfileSlot(stateIndex, 0);
+        btmRoller.selectProfileSlot(stateIndex, 0);
+        
+        topRollerTargetRPM = stateMapTop.get(targetStatesTop[stateIndex])[4];
+        topRollerTargetRPM = stateMapBtm.get(targetStatesBtm[stateIndex])[4];
+    }
+
     public void printTemperatures()
     {
         System.out.println("Top: " + topRoller.getTemperature());
@@ -216,6 +349,7 @@ public class CatzShooter {
     private void shoot()
     {
         shooterState = ShooterState.SHOOTING;
+        feeder.set(FEEDER_SPEED);
     }
 
     private void shooterOff()
@@ -231,28 +365,29 @@ public class CatzShooter {
         
         //turn pid off
 
-        topRoller.set(0.0);
-        btmRoller.set(0.0);
+        topRoller.set(ControlMode.PercentOutput, 0.0);
+        btmRoller.set(ControlMode.PercentOutput, 0.0);
+        feeder.set(0);
     }
 
     private void setTargetVelocity()
     {
-        double velTop = -Conversions.RPMToFalcon(topRollerTargetRPM, topRollerGearRatio);
+        double velTop = -Conversions.RPMToFalcon(topRollerTargetRPM, 1.0);
         topRoller.set(ControlMode.Velocity, velTop);
 
-        double velBot = Conversions.RPMToFalcon(botRollerTargetRPM, botRollerGearRatio);
+        double velBot = Conversions.RPMToFalcon(botRollerTargetRPM, 1.0);
         btmRoller.set(ControlMode.Velocity, velBot);
-        System.out.println(velTop);
+        System.out.println("velTop value " + Math.abs(velTop));
+
+        
     }
 
     public void smartdashboardShooter()
     {
-        SmartDashboard.putNumber("top sensor velocity", topRoller.getSelectedSensorVelocity());
-        SmartDashboard.putNumber("btm sensor velocity", btmRoller.getSelectedSensorVelocity());
+        // SmartDashboard.putNumber("top sensor velocity", topRoller.getSelectedSensorVelocity());
+        // SmartDashboard.putNumber("btm sensor velocity", btmRoller.getSelectedSensorVelocity());
         SmartDashboard.putNumber("toproller RPM", topRollerRPM);
+        SmartDashboard.putNumber("toproller rotation per 100ms", Math.abs(topRoller.getSelectedSensorVelocity()));
         SmartDashboard.putNumber("bottomroller RPM", botRollerRPM);
-        
     }
-
-    
 }
