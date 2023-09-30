@@ -382,7 +382,12 @@ public class CatzShooter {
     {
         // SmartDashboard.putNumber("top sensor velocity", topRoller.getSelectedSensorVelocity());
         // SmartDashboard.putNumber("btm sensor velocity", btmRoller.getSelectedSensorVelocity());
-        SmartDashboard.putNumber("toproller RPM", topRollerRPM);
+        SmartDashboard.putNumber("Top Roller RPM", topRollerRPM);
+        SmartDashboard.putNumber("Top Roller RPM Graph", topRollerRPM);
+
+        SmartDashboard.putNumber("Btm Roller RPM", botRollerRPM);
+        SmartDashboard.putNumber("Btm Roller RPM Graph", botRollerRPM);
+
         SmartDashboard.putNumber("toproller rotation per 100ms", Math.abs(topRoller.getSelectedSensorVelocity()));
         SmartDashboard.putNumber("bottomroller RPM", botRollerRPM);
     }
