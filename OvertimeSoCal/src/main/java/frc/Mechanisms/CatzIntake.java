@@ -21,7 +21,7 @@ public class CatzIntake{
 
     private  WPI_TalonFX intakeRoller;
 
-    private final int INTAKE_ROLLER_CAN_ID = 2637;
+    private final int INTAKE_ROLLER_CAN_ID = 30;
 
     private final SupplyCurrentLimitConfiguration currentLimit;
 
@@ -30,8 +30,8 @@ public class CatzIntake{
     private final double  CURRENT_LIMIT_TIMEOUT_SECONDS = 0.5;
     private final boolean ENABLE_CURRENT_LIMIT          = true;
 
-    private final int GROUND_PCM_PORT    = 2;
-    private final int STOWED_PCM_PORT   = 5;
+    private final int GROUND_PCM_PORT    = 3;
+    private final int STOWED_PCM_PORT    = 4;
 
     private final double INTAKE_ROLLER_POWER = 1.0;
 
@@ -70,14 +70,14 @@ public class CatzIntake{
         }
     }
 
-    public void cmdProcIntake(boolean toggleIntake, double intakeRollerInward, double intakeRollerOutward)
+    public void cmdProcIntake(boolean groundIntake, boolean stowIntake, double intakeRollerInward, double intakeRollerOutward)
     {
-        if (toggleIntake && isStowed())
+        if (groundIntake)
         {
             intakeSolenoid.set(Value.kForward);
             intakeState = INTAKE_GROUND;
         }
-        else if (toggleIntake)
+        else if (stowIntake)
         {
             intakeSolenoid.set(Value.kReverse);
             intakeState = INTAKE_STOWED;
