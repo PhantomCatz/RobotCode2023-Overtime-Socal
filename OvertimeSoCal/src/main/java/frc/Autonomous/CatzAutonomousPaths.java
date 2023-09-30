@@ -152,6 +152,20 @@ public class CatzAutonomousPaths
         }
     }
 
+    private void turnIntakeSystemOn()
+    {
+        Robot.intake.deployIntake();
+        Robot.intake.intakeRollerInward();
+        Robot.indexer.indexerIntake();
+    }
+
+    private void turnIntakeSystemOff()
+    {
+        Robot.intake.stowIntake();
+        Robot.intake.intakeRollerOff();
+        Robot.indexer.indexerOff();
+    }
+
     /*-----------------------------------------------------------------------------------------
     *    
     *  Auton Paths
@@ -164,12 +178,15 @@ public class CatzAutonomousPaths
 
         CompletableFuture.runAsync(()->{ //This allows for parallel autonomous actions. The delay time should be around when the robot gets off the charge station
             Timer.delay(4.0); //TBD tune later
-            //deploy intake
-            //run intake
+            turnIntakeSystemOn();
         });
+
         Robot.auton.DriveStraightOFFChargeStation(170.0, FWD_OR_BWD, 4.0);
+
         Timer.delay(1.0);
-        //stow intake
+
+        turnIntakeSystemOff();
+
         Robot.auton.DriveStraightONChargeStationFromBack(-108, FWD_OR_BWD, 4.0); 
         Robot.balance.StartBalancing();
     }
@@ -187,8 +204,7 @@ public class CatzAutonomousPaths
         cubeScore(ShootingMode.HIGH);
 
         CompletableFuture.runAsync(()->{
-            //deploy intake
-            //run intake
+            turnIntakeSystemOn();
         });
 
         Robot.auton.DriveStraight(-200, FWD_OR_BWD, 5.0);
@@ -196,8 +212,7 @@ public class CatzAutonomousPaths
         Timer.delay(1.0);
 
         CompletableFuture.runAsync(()->{
-            //stop intake motors
-            //stow intake
+            turnIntakeSystemOff();
             Robot.shooter.revUpShootMotor(ShootingMode.MID);
         });
 
@@ -210,8 +225,7 @@ public class CatzAutonomousPaths
         cubeScore(ShootingMode.HIGH);
 
         CompletableFuture.runAsync(()->{
-            //deploy intake
-            //run intake
+            turnIntakeSystemOn();
         });
 
         Robot.auton.DriveStraight(-200, FWD_OR_BWD, 5.0);
@@ -219,8 +233,7 @@ public class CatzAutonomousPaths
         Timer.delay(1.0);
 
         CompletableFuture.runAsync(()->{
-            //stop intake motors
-            //stow intake
+            turnIntakeSystemOff();
             Robot.shooter.revUpShootMotor(ShootingMode.MID);
         });
 
