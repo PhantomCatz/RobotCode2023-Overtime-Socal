@@ -85,6 +85,7 @@ public class CatzShooter {
 
     private final double MOTOR_RPM_CONVERSION_FACTOR = 10.0 * 60.0 / 2048.0;
 
+    public boolean shooterReady = false;
 
     boolean rumbleSet = false;
 
@@ -161,11 +162,11 @@ public class CatzShooter {
                     case SHOOTING:
                         shootingCounter++;
 
-                        //Robot.indexer.feedCubeToShooter(); TBD UNCOMMENT
+                        Robot.indexer.feedCubeToShooter(); 
 
                         if(shootingCounter >= SHOOTING_COUNTER_THRESHOLD)
                         {
-                            //Robot.indexer.indexerOff(); TBD uncomment
+                            Robot.indexer.indexerOff(); 
                             shooterOff(); //TBD make a button to abort
                         }
                     break;
@@ -198,6 +199,7 @@ public class CatzShooter {
         
         if(shoot)
         {
+            shooterReady = true;
             shoot();
         }
 

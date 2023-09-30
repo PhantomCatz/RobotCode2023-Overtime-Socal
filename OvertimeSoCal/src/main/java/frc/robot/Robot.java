@@ -6,9 +6,12 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.PneumaticHub;
+
 import frc.Mechanisms.CatzShooter;
 //import frc.Mechanisms.CatzIndexer;
 import frc.Mechanisms.CatzIntake;
+import frc.Mechanisms.CatzIndexer;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -23,25 +26,35 @@ public class Robot extends TimedRobot {
    *    - A: shoot 
    */
 
-   public static final CatzIntake intake = new CatzIntake();
-   //public static final CatzIndexer indexer = new CatzIndexer();
-   public static final CatzShooter shooter = new CatzShooter();
+   public static CatzIntake  intake;
+   public static CatzShooter shooter;
+   public static CatzIndexer indexer;
 
    private final int XBOX_AUX_PORT = 1;
    public static XboxController xboxAux;
 
+   private final int PH_CAN_ID = 1;
+
+   public PneumaticHub pneumaticHub;
 
    @Override
    public void robotInit()
    {
+      intake = new CatzIntake();
+      indexer = new CatzIndexer();
+      shooter = new CatzShooter();
       xboxAux = new XboxController(XBOX_AUX_PORT);
-      shooter.printTemperatures();
+      pneumaticHub = new PneumaticHub(PH_CAN_ID);
+
+      // shooter.printTemperatures();
+
    }
 
    @Override
    public void robotPeriodic()
    {
       shooter.smartdashboardShooter();
+      System.out.println(indexer.getBeamBreak());
    }
 
    @Override
@@ -59,15 +72,15 @@ public class Robot extends TimedRobot {
    @Override
    public void teleopPeriodic()
    {
-      shooter.cmdProcShooter(xboxAux.getYButtonPressed(), 
-      xboxAux.getXButtonPressed(), 
-      xboxAux.getAButtonPressed(), 
-      xboxAux.getBButtonPressed(),
-      xboxAux.getStartButtonPressed());
+      // shooter.cmdProcShooter(xboxAux.getYButtonPressed(), 
+      //                        xboxAux.getXButtonPressed(), 
+      //                        xboxAux.getAButtonPressed(), 
+      //                        xboxAux.getBButtonPressed(),
+      //                        xboxAux.getStartButtonPressed());
       
       shooter.shooterPeriodicUpdate();
 
-      intake.cmdProcIntake(xboxAux.getRightStickButton(), xboxAux.getLeftTriggerAxis(), xboxAux.getRightTriggerAxis());
-
+      intake.cmdProcIntake(xboxAux.getRightStickButton(), xboxAux.getLeftStickButton(), xboxAux.getLeftTriggerAxis(), xboxAux.getRightTriggerAxis());
+      indexer.cmdProcIndex(xboxAux.getLeftBumper(), xboxAux.getRightBumper(), xboxAux.getStartButton());
    }
 }
