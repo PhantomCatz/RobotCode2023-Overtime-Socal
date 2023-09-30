@@ -405,9 +405,8 @@ public class CatzShooter {
     {
         setShootingMode(mode);
 
-        shooterState = ShooterState.WAIT_FOR_STEADY;
-
         setTargetVelocity();
+        shooterState = ShooterState.WAIT_FOR_STEADY;
 
         double startTime = Timer.getFPGATimestamp();
         double elapsedTime = 0.0;

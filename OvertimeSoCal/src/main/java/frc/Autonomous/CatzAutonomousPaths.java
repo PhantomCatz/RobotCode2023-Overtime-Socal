@@ -162,7 +162,7 @@ public class CatzAutonomousPaths
     {
         cubeScore(ShootingMode.HIGH);
 
-        CompletableFuture.runAsync(()->{
+        CompletableFuture.runAsync(()->{ //This allows for parallel autonomous actions. The delay time should be around when the robot gets off the charge station
             Timer.delay(4.0); //TBD tune later
             //deploy intake
             //run intake
