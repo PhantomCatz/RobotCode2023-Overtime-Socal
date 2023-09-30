@@ -32,45 +32,43 @@ public class CatzShooter {
     private final WPI_TalonFX btmRoller; 
     private final CANSparkMax feeder;
 
-    private final double SHOOT_VEL_HIGH_TOP = 700;
-    private final double SHOOT_VEL_HIGH_BOT = 700;
+    private final double SHOOT_VEL_HIGH_TOP = 1000;
+    private final double SHOOT_VEL_HIGH_BOT = 1000;
     
-    private final double SHOOT_VEL_MID_TOP  = 1500;
-    private final double SHOOT_VEL_MID_BOT  = 1500; //600 rpm; kF * 0.75
+    private final double SHOOT_VEL_MID_TOP  = 700;
+    private final double SHOOT_VEL_MID_BOT  = 700; //600 rpm; kF * 0.75
                                                     //1000 rpm; kF * 0.48
-    
+
     private final double SHOOT_VEL_CUBE_TRANSFER_TOP = 800;
     private final double SHOOT_VEL_CUBE_TRANSFER_BOT = 800;
 
-    private final double RPM_TO_PERCENT_OUTPUT = 0.0001;
-
-    private final double kF_TOP_TOP = 0.046;//SHOOT_VEL_HIGH_TOP * RPM_TO_PERCENT_OUTPUT; 
-    private final double kP_TOP_TOP = 0;//kF_TOP_TOP * 0.2; 
+    private final double kF_TOP_TOP = 0.048;
+    private final double kP_TOP_TOP = 0.0;
     private final double kI_TOP_TOP = 0.0;
     private final double kD_TOP_TOP = 0.0;
 
-    private final double kF_BOT_TOP = SHOOT_VEL_HIGH_BOT * RPM_TO_PERCENT_OUTPUT; 
-    private final double kP_BOT_TOP = kF_BOT_TOP * 0.2; 
+    private final double kF_BOT_TOP = 0.048; 
+    private final double kP_BOT_TOP = 0.0; 
     private final double kI_BOT_TOP = 0.0;
     private final double kD_BOT_TOP = 0.0;
 
-    private final double kF_TOP_MID = 0.0;//KF_TOP_MID: 0.046; 
-    private final double kP_TOP_MID = 0.0;//0.000001;//kP_TOP_MID: 0.000001; 
+    private final double kF_TOP_MID = 0.048;
+    private final double kP_TOP_MID = 0.0;
     private final double kI_TOP_MID = 0.0;
     private final double kD_TOP_MID = 0.0;
 
-    private final double kF_BOT_MID = 0.0;//SHOOT_VEL_MID_BOT * RPM_TO_PERCENT_OUTPUT; 
-    private final double kP_BOT_MID = 0.0;//0.000001;//kF_BOT_MID * 0.02; 
+    private final double kF_BOT_MID = 0.048;
+    private final double kP_BOT_MID = 0.0;
     private final double kI_BOT_MID = 0.0;
     private final double kD_BOT_MID = 0.0;
 
-    private final double kF_TOP_CUBE = SHOOT_VEL_CUBE_TRANSFER_TOP * RPM_TO_PERCENT_OUTPUT; 
-    private final double kP_TOP_CUBE = kF_TOP_CUBE * 0.2; 
+    private final double kF_TOP_CUBE = 0.048; 
+    private final double kP_TOP_CUBE = 0.0; 
     private final double kI_TOP_CUBE = 0.0;
     private final double kD_TOP_CUBE = 0.0;
 
-    private final double kF_BOT_CUBE = SHOOT_VEL_CUBE_TRANSFER_BOT * RPM_TO_PERCENT_OUTPUT; 
-    private final double kP_BOT_CUBE = kF_BOT_CUBE * 0.2; 
+    private final double kF_BOT_CUBE = 0.048; 
+    private final double kP_BOT_CUBE = 0.0; 
     private final double kI_BOT_CUBE = 0.0;
     private final double kD_BOT_CUBE = 0.0;
 
@@ -215,8 +213,6 @@ public class CatzShooter {
             case OFF:
                 if(topRollerTargetRPM > 0.0)
                 {
-                    shooterState = ShooterState.WAIT_FOR_STEADY;
-                    setTargetVelocity();
                     rumbleSet = false;
                 }
             break;
@@ -276,9 +272,8 @@ public class CatzShooter {
             topRollerTargetRPM = SHOOT_VEL_HIGH_TOP;
             botRollerTargetRPM = SHOOT_VEL_HIGH_BOT;
 
-            
+            setTargetVelocity();
             //topRoller.set(ControlMode.PercentOutput, 0.32);
-
         }
         else if(midScore)
         {
@@ -288,17 +283,18 @@ public class CatzShooter {
             topRollerTargetRPM = SHOOT_VEL_MID_TOP;
             botRollerTargetRPM = SHOOT_VEL_MID_BOT;
 
+            setTargetVelocity();
             //topRoller.set(0.34);
         }
         else if(cubeTransfer)
         {
-
             topRoller.selectProfileSlot(CUBE_PID_SLOT, 0);
             btmRoller.selectProfileSlot(CUBE_PID_SLOT, 0);
 
             topRollerTargetRPM = SHOOT_VEL_CUBE_TRANSFER_TOP;
             botRollerTargetRPM = SHOOT_VEL_CUBE_TRANSFER_BOT;
 
+            setTargetVelocity();
             //topRoller.set(0.36);
         }
         
@@ -379,7 +375,7 @@ public class CatzShooter {
         btmRoller.set(ControlMode.Velocity, velBot);
         System.out.println("velTop value " + Math.abs(velTop));
 
-        
+        shooterState = ShooterState.WAIT_FOR_STEADY;
     }
 
     public void smartdashboardShooter()
