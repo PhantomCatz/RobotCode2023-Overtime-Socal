@@ -1,21 +1,28 @@
 package frc.Mechanisms;
 
-import com.ctre.phoenix.motorcontrol.ControlMode;
-import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
-import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 
+import com.revrobotics.CANSparkMax;
+import com.revrobotics.CANSparkMax.IdleMode;
+import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.GenericHID.RumbleType;
+
+import frc.robot.Robot;
+
 
 public class CatzIndexer {
 
-    private WPI_TalonFX ltIndexerMotor;
-    private WPI_TalonFX rtIndexerMotor;
+    private CANSparkMax ltIndexerMotor;
+    private CANSparkMax rtIndexerMotor;
 
-    private final int INDEXER_MOTOR_CAN_ID_LT = 4; //name should be left-canID
-    private final int INDEXER_MOTOR_CAN_ID_RT = 4; //see component map
+
+    private final int INDEXER_MOTOR_CAN_ID_LT = 20; 
+    private final int INDEXER_MOTOR_CAN_ID_RT = 21; 
 
     private final SupplyCurrentLimitConfiguration currentLimit;
+    private final int INDEXER_MC_CURRENT_LIMIT = 60;
 
     private final double  CURRENT_LIMIT_AMPS            = 60.0;
     private final double  CURRENT_LIMIT_TRIGGER_AMPS    = 60.0;
@@ -29,27 +36,83 @@ public class CatzIndexer {
 
     private DigitalInput indexerBeamBreak;
 
-    private final int INDEXER_BEAM_BREAK_DIO_PORT = 2637;
+    boolean beamBreakBroken = false;
+    boolean intakeStage = false;
 
+    private final int INDEXER_BEAM_BREAK_DIO_PORT = 5;
+
+    Timer indexerTimer = new Timer();
+
+    private Thread Indexer;
+
+    private double indexerTime;
     public CatzIndexer() 
     {
-        ltIndexerMotor = new WPI_TalonFX(INDEXER_MOTOR_CAN_ID_LT);
-        rtIndexerMotor = new WPI_TalonFX(INDEXER_MOTOR_CAN_ID_RT);
+        ltIndexerMotor = new CANSparkMax(INDEXER_MOTOR_CAN_ID_LT, MotorType.kBrushless);
+        rtIndexerMotor = new CANSparkMax(INDEXER_MOTOR_CAN_ID_RT, MotorType.kBrushless);
 
         currentLimit = new SupplyCurrentLimitConfiguration(ENABLE_CURRENT_LIMIT, CURRENT_LIMIT_AMPS, CURRENT_LIMIT_TRIGGER_AMPS, CURRENT_LIMIT_TIMEOUT_SECONDS);
 
-        ltIndexerMotor.configFactoryDefault();
-        ltIndexerMotor.setNeutralMode(NeutralMode.Brake); //change to brake
-        ltIndexerMotor.configSupplyCurrentLimit(currentLimit);
+        ltIndexerMotor.restoreFactoryDefaults();
+        ltIndexerMotor.setIdleMode(IdleMode.kBrake); //change to brake
+        ltIndexerMotor.setSmartCurrentLimit(INDEXER_MC_CURRENT_LIMIT);
 
-        rtIndexerMotor.configFactoryDefault();
-        rtIndexerMotor.setNeutralMode(NeutralMode.Brake); //change to brake
-        rtIndexerMotor.configSupplyCurrentLimit(currentLimit);
+        rtIndexerMotor.restoreFactoryDefaults();
+        rtIndexerMotor.setIdleMode(IdleMode.kBrake); //change to brake
+        rtIndexerMotor.setSmartCurrentLimit(INDEXER_MC_CURRENT_LIMIT);
         
         rtIndexerMotor.setInverted(true);
-        rtIndexerMotor.follow(ltIndexerMotor);
 
-        //indexerBeamBreak = new DigitalInput(INDEXER_BEAM_BREAK_DIO_PORT); TBD UNComment
+        indexerBeamBreak = new DigitalInput(INDEXER_BEAM_BREAK_DIO_PORT);
+
+        indexerTimer = new Timer();
+        // Indexer = new Thread();
+
+        startIndexer();
+    }
+
+
+    // Indexer Thread 
+
+    public static boolean beamBroken = false;
+    
+    public void startIndexer()
+    {
+        // indexerTime = indexerTimer.get();
+        // indexerTimer.reset();
+        // indexerTimer.start();
+        if(Robot.intake.intakeActive == true) 
+        {
+            System.out.println("Intake Indexer Mode Active");
+            // intakeStage = true;
+            
+            indexerIntake();
+        }
+
+        if(getBeamBreak() == true) //&& intakeStage == true
+        {
+            System.out.println("**********BeamBreakBroken!!");
+            // intakeStage = false;
+            beamBroken = true;
+            indexerOff();
+        } else {
+            beamBroken = false;
+            System.out.println("*************NotBroekn");
+        }
+
+        // Indexer = new Thread();
+        // {
+        //     while(true) 
+        //     {
+        //       
+
+        //     }
+        // }
+    }
+    
+    public boolean getBeamBroken() 
+    {
+        return beamBroken;
     }
 
     //False means the beam broke and true means the beams are connected??
@@ -80,7 +143,30 @@ public class CatzIndexer {
 
     private void runIndexer(double power)
     {
-        rtIndexerMotor.set(ControlMode.PercentOutput, power);
-        ltIndexerMotor.set(ControlMode.PercentOutput, power);
+        ltIndexerMotor.set(-power);
+        rtIndexerMotor.set(-power);
+    }
+
+    public void cmdProcIndex(boolean indexRollIn, boolean indexRollOut, boolean indexStop) 
+    {
+        if(indexRollIn) 
+        {   
+            indexerIntake();
+            Robot.xboxAux.setRumble(RumbleType.kLeftRumble, 1.0);
+
+        } else if (indexRollOut) 
+        {
+            indexerOuttake();
+            Robot.xboxAux.setRumble(RumbleType.kRightRumble, 1.0);
+
+        } 
+        
+        if (indexStop) 
+        {
+            indexerOff();
+            Robot.xboxAux.setRumble(RumbleType.kLeftRumble, 0.0);
+            Robot.xboxAux.setRumble(RumbleType.kRightRumble, 0.0);
+
+        }
     }
 }

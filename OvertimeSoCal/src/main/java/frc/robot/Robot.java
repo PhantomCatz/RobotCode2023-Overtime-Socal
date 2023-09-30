@@ -115,7 +115,8 @@ public class Robot extends TimedRobot {
             xboxAux.getBButtonPressed(),
             xboxAux.getStartButtonPressed());
 
-      intake.cmdProcIntake(xboxAux.getRightStickButton(), xboxAux.getLeftTriggerAxis(), xboxAux.getRightTriggerAxis());
+      intake.cmdProcIntake(xboxAux.getRightStickButton(), xboxAux.getLeftStickButton(), xboxAux.getLeftTriggerAxis(), xboxAux.getRightTriggerAxis());
+      indexer.cmdProcIndex(xboxAux.getLeftBumper(), xboxAux.getRightBumper(), xboxAux.getStartButton());
    }
 
    @Override
