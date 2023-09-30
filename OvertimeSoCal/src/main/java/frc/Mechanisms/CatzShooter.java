@@ -218,67 +218,71 @@ public class CatzShooter {
     public void startShooterThread()
     {
         Thread shooterThread = new Thread(()->{
-            topRollerRPM = Math.abs(topRoller.getSelectedSensorVelocity() * MOTOR_RPM_CONVERSION_FACTOR);
-            botRollerRPM = Math.abs(btmRoller.getSelectedSensorVelocity() * MOTOR_RPM_CONVERSION_FACTOR);
-    
-            // System.out.println("Target: " + topRollerTargetRPM);
-            // System.out.println("Current: " + topRollerRPM);
-    
-            //System.out.println("TOp: " + topRollerRPM);
-            //System.out.println("rotation per 100ms " + Math.abs(topRoller.getSelectedSensorVelocity()));
-            //System.out.println("Btm: " + botRollerRPM);
-    
-            switch(shooterState)
+            while(true)
             {
-                case OFF:
-                    if(topRollerTargetRPM > 0.0)
-                    {
-                        shooterState = ShooterState.WAIT_FOR_STEADY;
-                        rumbleSet = false;
-                    }
-                break;
-    
-                case WAIT_FOR_STEADY:
-                    if(Util.epsilonEquals(topRollerRPM, topRollerTargetRPM, SHOOTER_RPM_STEADY_RANGE) && Util.epsilonEquals(botRollerRPM, botRollerTargetRPM, SHOOTER_RPM_STEADY_RANGE))
-                    {
-                        shooterRPMStableCounter++;
-    
-                        if(shooterRPMStableCounter >= SHOOTER_RPM_STEADY_THRESHOLD)
+                topRollerRPM = Math.abs(topRoller.getSelectedSensorVelocity() * MOTOR_RPM_CONVERSION_FACTOR);
+                botRollerRPM = Math.abs(btmRoller.getSelectedSensorVelocity() * MOTOR_RPM_CONVERSION_FACTOR);
+        
+                // System.out.println("Target: " + topRollerTargetRPM);
+                // System.out.println("Current: " + topRollerRPM);
+        
+                //System.out.println("TOp: " + topRollerRPM);
+                //System.out.println("rotation per 100ms " + Math.abs(topRoller.getSelectedSensorVelocity()));
+                //System.out.println("Btm: " + botRollerRPM);
+        
+                switch(shooterState)
+                {
+                    case OFF:
+                        if(topRollerTargetRPM > 0.0)
                         {
-                            System.out.println("ready");
-                            shooterState = ShooterState.READY;
+                            shooterState = ShooterState.WAIT_FOR_STEADY;
+                            rumbleSet = false;
+                        }
+                    break;
+        
+                    case WAIT_FOR_STEADY:
+                        if(Util.epsilonEquals(topRollerRPM, topRollerTargetRPM, SHOOTER_RPM_STEADY_RANGE) && Util.epsilonEquals(botRollerRPM, botRollerTargetRPM, SHOOTER_RPM_STEADY_RANGE))
+                        {
+                            shooterRPMStableCounter++;
+        
+                            if(shooterRPMStableCounter >= SHOOTER_RPM_STEADY_THRESHOLD)
+                            {
+                                System.out.println("ready");
+                                shooterState = ShooterState.READY;
+                                shooterRPMStableCounter = 0;
+                            }
+                        }
+                        else
+                        {
                             shooterRPMStableCounter = 0;
                         }
-                    }
-                    else
-                    {
-                        shooterRPMStableCounter = 0;
-                    }
-                break;
-    
-                case READY:
-                    if(!rumbleSet)
-                    {
-                        System.out.println("rumblin'");
-                        Robot.xboxAux.setRumble(RumbleType.kLeftRumble, 1.0);
-                        rumbleSet = true;
-                    }
-                break;
-    
-                case SHOOTING:
-                    shootingCounter++;
-    
-                    if(shootingCounter >= SHOOTING_COUNTER_THRESHOLD)
-                    {
-                        shooterOff(); //TBD make a button to abort
-                    }
-                break;
+                    break;
+        
+                    case READY:
+                        if(!rumbleSet)
+                        {
+                            System.out.println("rumblin'");
+                            Robot.xboxAux.setRumble(RumbleType.kLeftRumble, 1.0);
+                            rumbleSet = true;
+                        }
+                    break;
+        
+                    case SHOOTING:
+                        shootingCounter++;
+        
+                        if(shootingCounter >= SHOOTING_COUNTER_THRESHOLD)
+                        {
+                            shooterOff(); //TBD make a button to abort
+                        }
+                    break;
+                }
+                Timer.delay(0.02);
             }
-            Timer.delay(0.02);
         });
-
+    
         shooterThread.start();
     }
+
 
     
 
