@@ -129,7 +129,7 @@ public class CatzShooter {
     private int shootingCounter = 0;
     private final int SHOOTING_COUNTER_THRESHOLD = 100; //two seconds
 
-    private final double SHOOTER_RPM_STEADY_RANGE = 50.0;
+    private final double SHOOTER_RPM_STEADY_FACTOR = 0.06; //The higher the RPM, the harder it will be to stable, so make the steady threshold scale based on how big it is.
 
     private final double MOTOR_RPM_CONVERSION_FACTOR = 10.0 * 60.0 / 2048.0;
 
@@ -241,13 +241,13 @@ public class CatzShooter {
                     break;
         
                     case WAIT_FOR_STEADY:
-                        if(Util.epsilonEquals(topRollerRPM, topRollerTargetRPM, SHOOTER_RPM_STEADY_RANGE) && Util.epsilonEquals(botRollerRPM, botRollerTargetRPM, SHOOTER_RPM_STEADY_RANGE))
+                        if(Util.epsilonEquals(topRollerRPM, topRollerTargetRPM, topRollerTargetRPM * SHOOTER_RPM_STEADY_FACTOR) && Util.epsilonEquals(botRollerRPM, botRollerTargetRPM, botRollerTargetRPM * SHOOTER_RPM_STEADY_FACTOR))
                         {
                             shooterRPMStableCounter++;
         
                             if(shooterRPMStableCounter >= SHOOTER_RPM_STEADY_THRESHOLD)
                             {
-                                System.out.println("ready");
+                                System.out.println("Ready to Shoot!");
                                 shooterState = ShooterState.READY;
                                 shooterRPMStableCounter = 0;
                             }
@@ -272,7 +272,7 @@ public class CatzShooter {
         
                         if(shootingCounter >= SHOOTING_COUNTER_THRESHOLD)
                         {
-                            shooterOff(); //TBD make a button to abort
+                            shooterOff();
                         }
                     break;
                 }
@@ -387,11 +387,9 @@ public class CatzShooter {
         topRollerTargetRPM = 0.0;
         botRollerTargetRPM = 0.0;
         
-        //turn pid off
-
         topRoller.set(ControlMode.PercentOutput, 0.0);
         btmRoller.set(ControlMode.PercentOutput, 0.0);
-        feeder.set(0);
+        feeder.set(0.0);
     }
 
     private void setTargetVelocity()

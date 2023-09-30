@@ -5,7 +5,6 @@ import frc.DataLogger.CatzLog;
 import frc.DataLogger.DataCollection;
 import frc.robot.*;
 
-@SuppressWarnings("unused")
 public class CatzAutonomous 
 {
     private final double SDS_L1_GEAR_RATIO = 8.14;       //SDS mk4i L1 ratio
