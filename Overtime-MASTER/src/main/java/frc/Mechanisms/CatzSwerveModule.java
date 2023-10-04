@@ -19,7 +19,7 @@ public class CatzSwerveModule
     private final CANSparkMax STEER_MOTOR;
     private final WPI_TalonFX DRIVE_MOTOR;
 
-    private final int MOTOR_ID;
+    private final String MOTOR_NAME;
 
     private DutyCycleEncoder magEnc;
     private DigitalInput MagEncPWMInput;
@@ -36,7 +36,7 @@ public class CatzSwerveModule
     private double command;
     public boolean driveDirectionFlipped = false;
 
-    private double WHEEL_OFFSET;
+    private final double WHEEL_OFFSET;
 
     public static final SendableChooser<Boolean> chosenState = new SendableChooser<>();
 
@@ -49,7 +49,7 @@ public class CatzSwerveModule
 
     private final int     STEER_CURRENT_LIMIT_AMPS      = 30;
 
-    public CatzSwerveModule(int driveMotorID, int steerMotorID, int encoderDIOChannel, double offset)
+    public CatzSwerveModule(int driveMotorID, int steerMotorID, int encoderDIOChannel, double offset, String motorName)
     {
         STEER_MOTOR = new CANSparkMax(steerMotorID, MotorType.kBrushless);
         DRIVE_MOTOR = new WPI_TalonFX(driveMotorID);
@@ -74,7 +74,7 @@ public class CatzSwerveModule
         WHEEL_OFFSET = offset;
 
         //for shuffleboard
-        MOTOR_ID = steerMotorID;
+        MOTOR_NAME = motorName;
         
     }
 
@@ -89,12 +89,6 @@ public class CatzSwerveModule
         //DRIVE_MOTOR.setNeutralMode(NeutralMode.Brake); //REMOVE AFTER TESTING
 
     }
-
-    public void setOffset(double offset)
-    {
-        WHEEL_OFFSET = offset;
-    }
-
     public void setCoastMode()
     {
         STEER_MOTOR.setIdleMode(IdleMode.kCoast);
@@ -207,16 +201,6 @@ public class CatzSwerveModule
         return magEnc.get();//currentAngle
     }
 
-    public double getWheelAngle()
-    {
-        return (magEnc.get() - WHEEL_OFFSET) * 360.0;
-    }
-
-    public double getStrPwr()
-    {
-        return STEER_MOTOR.getAppliedOutput();
-    }
-
     public double getError()
     {
         return angleError;
@@ -229,12 +213,12 @@ public class CatzSwerveModule
 
     public void smartDashboardModules()
     {
-        SmartDashboard.putNumber(MOTOR_ID + " Wheel Angle", (currentAngle));
+        SmartDashboard.putNumber(MOTOR_NAME + " WhlAng", (currentAngle)); //wheel angle
     }
 
     public void smartDashboardModules_DEBUG()
     {
-        SmartDashboard.putNumber(MOTOR_ID + " Mag Encoder", magEnc.get() );
+        SmartDashboard.putNumber(MOTOR_NAME + " MagEnc", magEnc.get() ); // mag encoder
         //SmartDashboard.putBoolean(motorID + " Flipped", driveDirectionFlipped);
     }
 

@@ -107,7 +107,7 @@ public class CatzAutonomousPaths
 
         switch (pathID)
         {
-            case CENTER_SCORE_1_INTAKE_BALANCE: centerScore1IntakeBalance();
+            case CENTER_SCORE_1_INTAKE_BALANCE: centerScore1HighBalance();
             break;
 
             case CENTER_SCORE_1_BALANCE       : centerScore1Balance();
@@ -166,29 +166,34 @@ public class CatzAutonomousPaths
         Robot.indexer.indexerOff();
     }
 
+    private void driveOutOfCommunityAndBackOnChargeStationCenter()
+    {
+        Robot.auton.DriveStraightOFFChargeStation(170.0, FWD_OR_BWD, 4.0);
+
+        Timer.delay(1.0);
+
+        Robot.auton.DriveStraightONChargeStationFromBack(-108, FWD_OR_BWD, 4.0); 
+        Robot.balance.StartBalancing();
+    }
+
     /*-----------------------------------------------------------------------------------------
     *    
     *  Auton Paths
     * 
     *----------------------------------------------------------------------------------------*/
     
-    private void centerScore1IntakeBalance()
+    private void centerScore1HighBalance()
     {
         cubeScore(ShootingMode.HIGH);
 
-        CompletableFuture.runAsync(()->{ //This allows for parallel autonomous actions. The delay time should be around when the robot gets off the charge station
-            Timer.delay(4.0); //TBD tune later
-            turnIntakeSystemOn();
-        });
+        driveOutOfCommunityAndBackOnChargeStationCenter();
+    }
 
-        Robot.auton.DriveStraightOFFChargeStation(170.0, FWD_OR_BWD, 4.0);
+    private void centerScore1MidBalance()
+    {
+        cubeScore(ShootingMode.MID);
 
-        Timer.delay(1.0);
-
-        turnIntakeSystemOff();
-
-        Robot.auton.DriveStraightONChargeStationFromBack(-108, FWD_OR_BWD, 4.0); 
-        Robot.balance.StartBalancing();
+        driveOutOfCommunityAndBackOnChargeStationCenter();
     }
 
     private void centerScore1Balance()
@@ -203,9 +208,8 @@ public class CatzAutonomousPaths
     {
         cubeScore(ShootingMode.HIGH);
 
-        CompletableFuture.runAsync(()->{
-            turnIntakeSystemOn();
-        });
+        turnIntakeSystemOn();
+
 
         Robot.auton.DriveStraight(-200, FWD_OR_BWD, 5.0);
 
