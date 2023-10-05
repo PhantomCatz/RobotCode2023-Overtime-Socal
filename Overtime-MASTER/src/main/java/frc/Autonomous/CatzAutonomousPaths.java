@@ -36,11 +36,12 @@ public class CatzAutonomousPaths
 
     private final int TEST                            = 100;
 
-    private final int CENTER_SCORE_1_INTAKE_BALANCE = 1;
-    private final int CENTER_SCORE_1_BALANCE        = 2;
+    private final int CENTER_SCORE_1_HIGH_BALANCE = 1;
+    private final int CENTER_SCORE_1_MID_BALANCE  = 2;
     
     private final int RIGHT_SCORE_2                 = 3;
     private final int LEFT_SCORE_2                  = 4;
+    private final int CENTER_SCORE_1_BALANCE        = 5;
 
     public static int pathID;
 
@@ -77,11 +78,13 @@ public class CatzAutonomousPaths
         chosenAllianceColor.addOption       ("Red Alliance",  Robot.constants.RED_ALLIANCE);
         SmartDashboard.putData              ("Alliance Color", chosenAllianceColor);
 
-        chosenPath.addOption("Center Score 1 Intake Balance", CENTER_SCORE_1_INTAKE_BALANCE);
+        chosenPath.addOption("Center Score High 1 Balance", CENTER_SCORE_1_HIGH_BALANCE);
+        chosenPath.addOption("Center Score Mid 1 Balance", CENTER_SCORE_1_MID_BALANCE);
         chosenPath.addOption("Center Score 1 Balance", CENTER_SCORE_1_BALANCE);
 
         chosenPath.addOption("Right Score 2", RIGHT_SCORE_2);
         chosenPath.addOption("Left Score 2", LEFT_SCORE_2);
+        
 
         chosenPath.addOption       ("TEST PATH",  TEST);
 
@@ -107,10 +110,10 @@ public class CatzAutonomousPaths
 
         switch (pathID)
         {
-            case CENTER_SCORE_1_INTAKE_BALANCE: centerScore1IntakeBalance();
+            case CENTER_SCORE_1_HIGH_BALANCE: centerScore1HighBalance();
             break;
 
-            case CENTER_SCORE_1_BALANCE       : centerScore1Balance();
+            case CENTER_SCORE_1_MID_BALANCE       : centerScore1MidBalance();
             break;
 
             case RIGHT_SCORE_2                : rightScore2();
@@ -118,6 +121,8 @@ public class CatzAutonomousPaths
 
             case LEFT_SCORE_2                 : leftScore2();
             break;
+
+            case CENTER_SCORE_1_BALANCE       : centerScore1Balance();
 
             case TEST: testPath(); //Scores High Cone - TBD
             break;
@@ -166,36 +171,48 @@ public class CatzAutonomousPaths
         Robot.indexer.indexerOff();
     }
 
+    private void driveOutOfCommunityAndBackOnChargeStationCenter()
+    {
+        Robot.auton.DriveStraightOFFChargeStation(170.0, FWD_OR_BWD, 4.0);
+
+        Timer.delay(1.0);
+
+        Robot.auton.DriveStraightONChargeStationFromBack(-108, FWD_OR_BWD, 4.0); 
+        Robot.balance.StartBalancing();
+    }
+
     /*-----------------------------------------------------------------------------------------
     *    
     *  Auton Paths
     * 
     *----------------------------------------------------------------------------------------*/
     
-    private void centerScore1IntakeBalance()
+
+    private void centerScore1HighBalance()
     {
         cubeScore(ShootingMode.HIGH);
 
-        CompletableFuture.runAsync(()->{ //This allows for parallel autonomous actions. The delay time should be around when the robot gets off the charge station
-            Timer.delay(4.0); //TBD tune later
-            turnIntakeSystemOn();
-        });
+        driveOutOfCommunityAndBackOnChargeStationCenter();
+    }
 
-        Robot.auton.DriveStraightOFFChargeStation(170.0, FWD_OR_BWD, 4.0);
+    private void centerScore1MidBalance()
+    {
+        cubeScore(ShootingMode.MID);
 
-        Timer.delay(1.0);
-
-        turnIntakeSystemOff();
-
-        Robot.auton.DriveStraightONChargeStationFromBack(-108, FWD_OR_BWD, 4.0); 
-        Robot.balance.StartBalancing();
+        driveOutOfCommunityAndBackOnChargeStationCenter();
     }
 
     private void centerScore1Balance()
     {
         cubeScore(ShootingMode.HIGH);
+        Robot.auton.DriveStraight(184, FWD_OR_BWD, 4.0);
+        turnIntakeSystemOn();
 
-        Robot.auton.DriveStraight(-70, FWD_OR_BWD, 4.0); 
+        Robot.auton.DriveStraight(40, FWD_OR_BWD, 2.0);
+        Timer.delay(1.0);
+        turnIntakeSystemOff();
+
+        Robot.auton.DriveStraight(-90, FWD_OR_BWD, 4.0); 
         Balance();
     }
 
@@ -203,11 +220,10 @@ public class CatzAutonomousPaths
     {
         cubeScore(ShootingMode.HIGH);
 
-        CompletableFuture.runAsync(()->{
-            turnIntakeSystemOn();
-        });
+        turnIntakeSystemOn();
 
-        Robot.auton.DriveStraight(-200, FWD_OR_BWD, 5.0);
+
+        Robot.auton.DriveStraight(200, FWD_OR_BWD, 5.0);
 
         Timer.delay(1.0);
 
@@ -216,7 +232,7 @@ public class CatzAutonomousPaths
             Robot.shooter.revUpShootMotor(ShootingMode.MID);
         });
 
-        Robot.auton.DriveStraight(200, FWD_OR_BWD, 5.0);
+        Robot.auton.DriveStraight(-200, FWD_OR_BWD, 5.0);
         Robot.shooter.shoot();
     }
 
