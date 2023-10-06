@@ -1,7 +1,5 @@
 package frc.Autonomous;
 
-import javax.lang.model.util.ElementScanner14;
-
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.DataLogger.CatzLog;
@@ -62,11 +60,11 @@ public class CatzBalance
                 timer.reset();
                 timer.start();
 
-                if(DataCollection.chosenDataID.getSelected() == DataCollection.LOG_ID_BALANCE)
-                {
-                    data = new CatzLog(ANG_SLOWBAND, ANG_GAIN, RATE_GAIN, MAX_POWER, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0);  
-                    Robot.dataCollection.logData.add(data);
-                }
+                // if(DataCollection.chosenDataID.getSelected() == DataCollection.LOG_ID_BALANCE)
+                // {
+                //     data = new CatzLog(ANG_SLOWBAND, ANG_GAIN, RATE_GAIN, MAX_POWER, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0);  
+                //     Robot.dataCollection.logData.add(data);
+                // } //what is this for?
 
                 while(true)
                 {

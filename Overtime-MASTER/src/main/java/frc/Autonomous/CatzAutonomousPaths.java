@@ -1,7 +1,6 @@
 package frc.Autonomous;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeoutException;
 
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;

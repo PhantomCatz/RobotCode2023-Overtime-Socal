@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.Utils.Conversions;
+import frc.Utils.Util;
 import frc.robot.Robot;
 
 public class CatzShooter {
@@ -110,20 +111,20 @@ public class CatzShooter {
     private volatile double topRollerTargetRPM = 0.0;
     private volatile double botRollerTargetRPM = 0.0;
 
-    private int shooterRPMStableCounter = 0;
-    private final int SHOOTER_RPM_STEADY_THRESHOLD = 10; //0.1 second
+    private final double SHOOTER_RPM_STEADY_THRESHOLD_SCALING_FACTOR = 0.06;
 
+    private int shooterRPMStableCounter = 0;
+    private final int SHOOTER_RPM_STEADY_THRESHOLD = 10; //0.2 second
+    
     private int shootingCounter = 0;
     private final int SHOOTING_COUNTER_THRESHOLD = 100; //two seconds
 
-    private final double SHOOTER_RPM_STEADY_RANGE = 75.0;
-
     private boolean rumbleSet = false;
 
-    private double minThreshHoldTop = 0.0;
-    private double maxThreshHoldTop = 0.0;
-    private double minThreshHoldBot = 0.0;
-    private double maxThreshHoldBot = 0.0;
+    // private double minThreshHoldTop = 0.0;
+    // private double maxThreshHoldTop = 0.0;
+    // private double minThreshHoldBot = 0.0;
+    // private double maxThreshHoldBot = 0.0;
 
     public CatzShooter()
     {
@@ -174,10 +175,6 @@ public class CatzShooter {
                 switch(shooterState)
                 {
                     case OFF:
-                        if(topRollerTargetRPM > 0.0)
-                        {
-                            rumbleSet = false;
-                        }
                     break;
         
                     case WAIT_FOR_STEADY:
@@ -186,12 +183,11 @@ public class CatzShooter {
                        // System.out.println("BOT: " + minThreshHoldBot + " < " + botRollerRPM + " < " + maxThreshHoldBot); 
                                            
 
-
-                        if (((topRollerRPM >= minThreshHoldTop) && (topRollerRPM <= maxThreshHoldTop)) && 
-                            ((botRollerRPM >= minThreshHoldBot) && (botRollerRPM <= maxThreshHoldBot)) )
+                        // ((topRollerRPM >= minThreshHoldTop) && (topRollerRPM <= maxThreshHoldTop)) && 
+                        //((botRollerRPM >= minThreshHoldBot) && (botRollerRPM <= maxThreshHoldBot)) 
+                        if (Util.epsilonEquals(topRollerRPM, topRollerTargetRPM, topRollerTargetRPM * SHOOTER_RPM_STEADY_THRESHOLD_SCALING_FACTOR) && Util.epsilonEquals(botRollerRPM, botRollerTargetRPM, botRollerTargetRPM * SHOOTER_RPM_STEADY_THRESHOLD_SCALING_FACTOR))
                         {
                             shooterRPMStableCounter++;
-                            //System.out.println(shooterRPMStableCounter);
         
                             if(shooterRPMStableCounter >= SHOOTER_RPM_STEADY_THRESHOLD)
                             {
@@ -231,15 +227,8 @@ public class CatzShooter {
         shooterThread.start();
     }
 
-
-    
-
-    /**
-     * parameters: topscore, midscore, cubetransfer, shoot
-     **/
     public void cmdProcShooter(boolean topScore, boolean midScore, boolean cubeTransfer, boolean shoot, boolean abort)
     {
-        
         if(topScore)
         {
             topRollerTargetRPM = SHOOT_VEL_HIGH_TOP;
@@ -311,10 +300,10 @@ public class CatzShooter {
         double velBot = Conversions.RPMToFalcon(botRollerTargetRPM, 1.0);
         btmRoller.set(ControlMode.Velocity, velBot);
 
-        minThreshHoldTop = topRollerTargetRPM - SHOOTER_RPM_STEADY_RANGE;
-        maxThreshHoldTop = topRollerTargetRPM + SHOOTER_RPM_STEADY_RANGE;
-        minThreshHoldBot = botRollerTargetRPM - SHOOTER_RPM_STEADY_RANGE;
-        maxThreshHoldBot = botRollerTargetRPM + SHOOTER_RPM_STEADY_RANGE;
+        // minThreshHoldTop = topRollerTargetRPM - SHOOTER_RPM_STEADY_RANGE;
+        // maxThreshHoldTop = topRollerTargetRPM + SHOOTER_RPM_STEADY_RANGE;
+        // minThreshHoldBot = botRollerTargetRPM - SHOOTER_RPM_STEADY_RANGE;
+        // maxThreshHoldBot = botRollerTargetRPM + SHOOTER_RPM_STEADY_RANGE;
 
         rumbleSet = false;
         shooterState = ShooterState.WAIT_FOR_STEADY;       

@@ -31,11 +31,10 @@ public class CatzIndexer {
 
     private final int     INDEXER_BEAM_BREAK_DIO_PORT = 5;
     private final boolean INDEXER_BEAM_CUBE_PRESENT_STATE  = false;
-    private final boolean INDEXER_BEAM_NO_CUBE_STATE       = true;
 
     private Thread monitorBeamBreakThread;
 
-    private final double   INDEXER_MONITOR_BEAM_BREAK_THREAD_PERIOD_SEC = 0.020;
+    private final double INDEXER_MONITOR_BEAM_BREAK_THREAD_PERIOD_SEC = 0.010;
 
     Timer indexerTimer = new Timer();
 
